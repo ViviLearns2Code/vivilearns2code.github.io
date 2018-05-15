@@ -45,16 +45,11 @@ The above expression describes the inner gradient, which still needs to be chain
 \frac{dout}{dx\_{lk}} = \sum_{j=1}^N \Big( \frac{dout}{dx^{\text{norm}}\_{jk}} \cdot \frac{dx\_{jk}^{norm}}{dx\_{lk}} \Big) \quad .
 \end{align}
 
-The inner gradient with respect to $$\gamma_k$$ is given by 
+The gradient with respect to $$\gamma_k$$ is given by 
 
 \begin{align}
-\frac{dx\_{jk}^{norm}}{d\gamma_k} = \sum_{j=1}^N \frac{x\_{jk}-\overline{x_k}}{\sqrt{\sigma_k^2+\epsilon}}
-\end{align}
-
-and chaining it to the upstream gradient yields 
-
-\begin{align}
-\frac{dout}{d\gamma_k} = \sum_{h=1}^N \Big( \frac{dout}{dx^{\text{norm}}\_{hk}} \cdot \frac{dx\_{hk}^{norm}}{d\gamma_{k}} \Big) \quad .
+\frac{dout}{d\gamma_k} &= \sum_{j=1}^N \Big( \frac{dout}{dx^{\text{norm}}\_{jk}} \cdot \frac{dx\_{jk}^{norm}}{d\gamma_{k}} \Big) \newline
+&= \Big( \frac{dout}{dx^{\text{norm}}\_{jk}} \frac{x\_{jk}-\overline{x_k}}{\sqrt{\sigma_k^2+\epsilon}} \Big) \quad .
 \end{align}
 
 The gradient with respect to $$\beta_k$$ is given by
