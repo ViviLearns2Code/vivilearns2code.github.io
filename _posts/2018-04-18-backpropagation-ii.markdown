@@ -49,7 +49,7 @@ The gradient with respect to $$\gamma_k$$ is given by
 
 \begin{align}
 \frac{dout}{d\gamma_k} &= \sum_{j=1}^N \Big( \frac{dout}{dx^{\text{norm}}\_{jk}} \cdot \frac{dx\_{jk}^{norm}}{d\gamma_{k}} \Big) \newline
-&= \Big( \frac{dout}{dx^{\text{norm}}\_{jk}} \frac{x\_{jk}-\overline{x_k}}{\sqrt{\sigma_k^2+\epsilon}} \Big) \quad .
+&= \sum_{j=1}^N \Big( \frac{dout}{dx^{\text{norm}}\_{jk}} \cdot \frac{x\_{jk}-\overline{x_k}}{\sqrt{\sigma_k^2+\epsilon}} \Big) \quad .
 \end{align}
 
 The gradient with respect to $$\beta_k$$ is given by
