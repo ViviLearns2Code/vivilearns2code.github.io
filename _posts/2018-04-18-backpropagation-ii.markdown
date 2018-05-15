@@ -42,19 +42,19 @@ We can now use the above expressions to calculate the complete derivation with t
 The above expression describes the inner gradient, which still needs to be chained to the upstream gradient $$dout/dx^{\text{norm}}_jk, j\in\{1,\dots,N\}, k\in\{1,\dots,D\}$$:
 
 \begin{align}
-\frac{dout}{dx_{lk}} = \sum_{j=1} \big( \frac{dout}{dx^{\text{norm}}_{jk}} \¢dot \frac{dx_{jk}^{norm}}{dx_{lk}} \big) \quad .
+\frac{dout}{dx\_{lk}} = \sum_{j=1} \big( \frac{dout}{dx^{\text{norm}}\_{jk}} \¢dot \frac{dx\_{jk}^{norm}}{dx\_{lk}} \big) \quad .
 \end{align}
 
 The inner gradient with respect to $$\gamma_k$$ is given by 
 
 \begin{align}
-\frac{dx_{jk}^{norm}}{d\gamma_k} = \sum_{j=1}^N \frac{x\_{jk}-\overline{x_k}}{\sqrt{\sigma_k^2+\epsilon}}
+\frac{dx\_{jk}^{norm}}{d\gamma_k} = \sum_{j=1}^N \frac{x\_{jk}-\overline{x_k}}{\sqrt{\sigma_k^2+\epsilon}}
 \end{align}
 
 and chaining it to the upstream gradient yields 
 
 \begin{align}
-\frac{dout}{d\gamma_k} = \sum_{h=1}^N \big( \frac{dout}{dx^{\text{norm}}_{hk}} \cdot \frac{dx_{hk}^{norm}}{d\gamma_{k}} \big) \quad .
+\frac{dout}{d\gamma_k} = \sum_{h=1}^N \big( \frac{dout}{dx^{\text{norm}}\_{hk}} \cdot \frac{dx\_{hk}^{norm}}{d\gamma_{k}} \big) \quad .
 \end{align}
 
 The gradient with respect to $$\beta_k$$ is given by
