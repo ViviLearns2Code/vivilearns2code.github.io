@@ -17,11 +17,11 @@ $$x^{\text{norm}}_{ik} = \gamma_k \cdot \frac{x_{ik}-\overline{x_k}}{\sqrt{\sigm
 
 where $$\overline{x_k}$$ and $$\sigma^2_k$$ refer to the mean and variance of the $$k$$-th column. The parameters $$\gamma_k$$ and $$\beta_k$$ are learned by backpropagation.
 
-Our goal is to calculate the derivative
+Our first goal is to calculate the derivative
 
 $$\frac{dx^{\text{norm}}_{ik}}{dx_{lk}} \quad , \quad l\in\{1,\dots,N\} .$$
 
-The first thing to note is that both the column mean and variance are functions of $$x_{lk}$$. Therefore we need to derive $$d\overline{x_k}/dx_{lk}$$ and $$\sigma^2_k/dx_{lk}$$ first. For the column mean, this is straightforward:
+Both the column mean and variance are functions of $$x_{lk}$$, so we need to derive $$d\overline{x_k}/dx_{lk}$$ and $$\sigma^2_k/dx_{lk}$$ first. For the column mean, this is straightforward:
 
 $$\frac{d\overline{x_k}}{dx_{lk}} = \frac{1}{N} \quad .$$
 
@@ -63,7 +63,7 @@ The gradient with respect to $$\beta_k$$ is given by
 \frac{dout}{d\beta_k} = \sum_{j=1}^N \frac{dout}{dx^{\text{norm}}_{jk}} \quad .
 \end{align}
 
-The implementation of a BN layer in python is given by
+Plugging everything in will make the implementation of a BN layer look something like this in Python:
 {% highlight python %}
 import numpy as np
 
