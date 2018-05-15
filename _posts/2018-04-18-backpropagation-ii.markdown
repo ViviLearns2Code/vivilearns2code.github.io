@@ -39,20 +39,29 @@ We can now use the above expressions to calculate the complete derivation with t
 \frac{x_{ik}^{norm}}{dx_{lk}} &= \gamma_k \cdot \frac{(\delta(i=l)-1/N)}{\sqrt{\sigma^2_k + \epsilon} } - \frac{(x\_{ik}-\overline{x_k})\cdot (x\_{lk}-\overline{x_k})}{N\sqrt{\sigma^2_k + \epsilon}^3}
 \end{align}
 
-The equations for all $$x_{ik}^{norm}/dx_{lk}$$ can be summarized in matrix notation
+The above expression describes the inner gradient, which still needs to be chained to the upstream gradient $$dout/dx^{\text{norm}}_jk, j\in\{1,\dots,N\}, k\in\{1,\dots,D\}$$:
 
 \begin{align}
-\Big(\frac{\mathbf{1}\_{N\times D}-\frac{1}{N} \mathbf{1}\_{N\times D}}{\sqrt{\sigma^2+\epsilon}} - \frac{(X-\mu)^T (X-\mu)}{N\sqrt{\sigma^2+\epsilon}^3}\Big) \cdot \gamma \quad ,
+\frac{dout}{dx_{lk}} = \sum_{j=1} \big( \frac{dout}{dx^{\text{norm}}_{jk}} \¢dot \frac{dx_{jk}^{norm}}{dx_{lk}} \big) \quad .
 \end{align}
 
-where $$\mathbf{1}$$ is a matrix with 1 in every entry, $$\gamma \in \mathbb{R}^{D}$$, $$X\in \mathbb{R}^{N\times D}$$ and
+The inner gradient with respect to $$\gamma_k$$ is given by 
 
 \begin{align}
-\mu &= \frac{1}{N}\mathbf{1}\_{N\times N}X \in \mathbb{R}^{N\times D} \newline
-\sigma^2 &= \frac{1}{N}\cdot (X-\mu)^T(X-\mu) \in \mathbb{R}^{N\times D}
+\frac{dx_{jk}^{norm}}{d\gamma_k} = \sum_{j=1}^N \frac{x\_{jk}-\overline{x_k}}{\sqrt{\sigma_k^2+\epsilon}}
 \end{align}
 
-Note that the square root and power operations are element-wise.
+and chaining it to the upstream gradient yields 
+
+\begin{align}
+\frac{dout}{d\gamma_k} = \sum_{h=1}^N \big( \frac{dout}{dx^{\text{norm}}_{hk}} \cdot \frac{dx_{hk}^{norm}}{d\gamma_{k}} \big) \quad .
+\end{align}
+
+The gradient with respect to $$\beta_k$$ is given by
+
+\begin{align}
+\frac{dout}{d\beta_k} = \sum_{j=1}^N \frac{dout}{dx^{\text{norm}}_{jk}} \quad .
+\end{align}
 
 The implementation of a BN layer in python is given by
 {% highlight python %}
