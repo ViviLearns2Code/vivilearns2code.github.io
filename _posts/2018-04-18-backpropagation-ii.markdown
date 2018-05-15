@@ -39,10 +39,10 @@ We can now use the above expressions to calculate the complete derivation with t
 \frac{x_{ik}^{norm}}{dx_{lk}} &= \gamma_k \cdot \frac{(\delta(i=l)-1/N)}{\sqrt{\sigma^2_k + \epsilon} } - \frac{(x\_{ik}-\overline{x_k})\cdot (x\_{lk}-\overline{x_k})}{N\sqrt{\sigma^2_k + \epsilon}^3}
 \end{align}
 
-The above expression describes the inner gradient, which still needs to be chained to the upstream gradient $$dout/dx^{\text{norm}}_jk, j\in\{1,\dots,N\}, k\in\{1,\dots,D\}$$:
+The above expression describes the inner gradient, which still needs to be chained to the upstream gradient $$dout/dx^{\text{norm}}_{jk}$$ for $$j\in\{1,\dots,N\}, k\in\{1,\dots,D\}$$:
 
 \begin{align}
-\frac{dout}{dx\_{lk}} = \sum_{j=1} \big( \frac{dout}{dx^{\text{norm}}\_{jk}} \¢dot \frac{dx\_{jk}^{norm}}{dx\_{lk}} \big) \quad .
+\frac{dout}{dx\_{lk}} = \sum_{j=1}^N \Big( \frac{dout}{dx^{\text{norm}}\_{jk}} \cdot \frac{dx\_{jk}^{norm}}{dx\_{lk}} \Big) \quad .
 \end{align}
 
 The inner gradient with respect to $$\gamma_k$$ is given by 
@@ -54,7 +54,7 @@ The inner gradient with respect to $$\gamma_k$$ is given by
 and chaining it to the upstream gradient yields 
 
 \begin{align}
-\frac{dout}{d\gamma_k} = \sum_{h=1}^N \big( \frac{dout}{dx^{\text{norm}}\_{hk}} \cdot \frac{dx\_{hk}^{norm}}{d\gamma_{k}} \big) \quad .
+\frac{dout}{d\gamma_k} = \sum_{h=1}^N \Big( \frac{dout}{dx^{\text{norm}}\_{hk}} \cdot \frac{dx\_{hk}^{norm}}{d\gamma_{k}} \Big) \quad .
 \end{align}
 
 The gradient with respect to $$\beta_k$$ is given by
