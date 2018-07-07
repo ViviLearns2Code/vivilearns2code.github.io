@@ -7,6 +7,8 @@ categories: project
 ---
 As a football enthusiast and a beginner in machine learning, the FIFA World Cup was the perfect "first project". I decided to build a model which would predict the exact number of goals scored by each team in a game. A lot of literature which I have found regarding football predictions is focused on predicting the correct tendency (win/draw/loss) and the models are trained on and applied to football league systems such as the English Premier League. The world cup only takes place every four years, which reduces the amount of available data. It is divided into a group stage and a knockout stage and teams which have never encountered each other before often produce surprising results. 
 
+I uploaded all relevant files with [this repo][10].
+
 ## Collecting Data
 For data collection, I first checked if there was a database or website which recorded enough data about the past international tournaments. I ended up with transfermarkt.de which has detailed world cup data starting from 2006. I wrote a scraper with [scrapy][1] to retrieve the following information 
 * player market values
@@ -237,7 +239,7 @@ Out of curiosity, I also trained standard sklearn classifiers (Gradient Tree Boo
 ## For Future Reference
 What I did not notice was that the market values of players increased immensely from one tournament to the next. According to statista, the most valuable team in Brazil 2014 was worth [622 million Euros][5]. The most valuable team in Russia 2018 was worth [1080 million euros][6]. It came to my attention when I was playing around with statsmodels. I fit the model on data from previous world cups and made it predict results for world cup 2018 data. It ended up predicting very high means because the inverse of the used link function, the exponential function, is sensitive to changes of the linear predictor. For example, let $$w = [0.1;0.2;-0.01]^T$$ the learned coefficients and $$x_1 = [1;2;5]^T, x_2 = [1;10;5]^T$$ two different feature vectors. The predicted mean values the differ considerably:
 \begin{align}
-\mu_1 &= \exp{(w^T x_1)} = \exp{( [1 2 5])} = \exp{(0.45)} \approx 1.57 \nonumber\newline 
+\mu_1 &= \exp{(w^T x_1)} = \exp{(0.45)} \approx 1.57 \nonumber\newline 
 &\ll 7.77 \approx \\exp{(2.05)} = \exp{(w^T x_2)} = \mu_2 \nonumber
 \end{align} 
 While inference using statsmodels produced useless results, the neural network approach was not as sensitive to the market value changes. For future projects, it would be a good idea to remove trends of such time series to prevent instabilities.
@@ -255,6 +257,7 @@ While the above points refer to the quality of the dataset, there is also someth
 [7]: https://arxiv.org/abs/1703.04730
 [8]: https://en.wikipedia.org/wiki/Negative_binomial_distribution#Poisson_distribution
 [9]: https://github.com/ViviLearns2Code/ml-fifa/blob/master/data/final.csv
+[10]: https://github.com/ViviLearns2Code/ml-fifa
 [heatmap]: /images/fifa_heatmap.png "Heatmap"
 [^1]: The coefficients were significant on a 0.05 level.
 [^2]: 4 out of 8 games were decided by penalty shootouts
