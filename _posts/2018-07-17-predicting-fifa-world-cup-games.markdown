@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Predicting FIFA World Cup Games"
-date:   2018-07-17 10:04:43 +0200
+date:   2018-07-07 10:04:43 +0200
 comments: true
 categories: project
 ---
@@ -18,13 +18,13 @@ For data collection, I first checked if there was a database or website which re
 
 Since there have only been three world cups since 2006, the amount of data is limited (especially the knockout stage games are few). I therefore decided to scrape the European, Asian, African, South American and North American championships as well. This did not require much additional effort because transfermarkt pages all follow the same pattern and no additional scraper was neessary. At the same time, these continental tournaments are the type of football events most similar to the world cup.
 
-What was unexpected was that transfermarkt sometimes returned different data on different days. You could open the same team lineup page on different days and you would get different data. Some inconcistencies were manually corrected after scraping. Missing player market values were imputed with the lowest market value within a player's team.
+A friend of mine helped me with data collection and we found out by chance that the same transfermarkt page would sometimes display different data on different days. We manually removed the inconcistencies to the best of our knowledge. Missing player market values were imputed with the lowest market value within a player's team.
 
-The final, aggregated dataset can be seen here [TODO: link to github file]
+The final, aggregated dataset can be found [here][9].
 
-A heatmap plot of the spearman rank correlations shows that goal count is monotonically related to market values and historic results. The p-values of both features are [TODO]. 
+A heatmap plot of the spearman rank correlations shows that a team's goal count is monotonically related to market values and historic results[^1].
 
-TODO: Heatmap plot
+![Heatmap of spearman rank correlations][heatmap]
 
 ## Modelling
 I chose to do a negative binomial regression on the obtained data set. The PMF of a random variable $$X \sim Nb(r,p)$$ is given by 
@@ -66,37 +66,179 @@ The python library [statsmodels][2] offers built-in support for negative binomia
 
 Instead of using statsmodels, I implemented a neural network which would regress the mean $$\mu$$ and $$\alpha$$ of both teams. In other words, the output layer has 4 neurons. I defined a negative binomial likelihood loss, similar to [this implementation in Tensorflow][3]. But instead of using one linear layer (which corresponds to a generalized linear model), I use more linear layers with ReLu functions. This way, the expectation is no longer a linear function of the features but can be learned as a more complex function with nonlinearities. 
 
-TODO: Insert code snippet loss function
+{% highlight python %}
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class NBNet(nn.Module):
+    def __init__(self,dim_in,h1,h2,dim_out,p_drop=0.2):
+        super(NBNet, self).__init__()
+        self.dropout = nn.Dropout(p=p_drop)
+        self.softplus = nn.Softplus() 
+        self.fc1 = nn.Linear(dim_in,h1)
+        self.fc2 = nn.Linear(h1, h2)
+        self.fc3 = nn.Linear(h2, dim_out)
+    
+    def forward(self,x):
+        '''
+        link function score = log(mu)
+        dispersion alpha > 0
+        '''
+        x = F.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = F.relu(self.fc2(x))        
+        x = self.dropout(x)
+        x = self.fc3(x)   
+        muA = torch.exp(x[:,[0]]) 
+        muB = torch.exp(x[:,[2]])
+        alphaA = self.softplus(x[:,[1]]) 
+        alphaB = self.softplus(x[:,[3]])
+        return (muA,alphaA,muB,alphaB)
+
+class NBNLLLoss(nn.Module):
+    def __init__(self,eps=1e-5):
+        '''
+        eps for numerical stability
+        '''
+        super(NBNLLLoss, self).__init__()
+        self.eps = eps 
+
+    def forward(self,mu,alpha,y):
+        eps = self.eps
+        r = 1/(alpha+eps)
+        s1 = -torch.lgamma(y+r+eps)
+        s2 = torch.lgamma(r+eps)
+        s3 = torch.lgamma(y+1)
+        s4 = -theta*torch.log(r+eps)
+        s5 = -y*torch.log(mu+eps)
+        s6 = (r+y)*torch.log(r+mu+eps)
+        NLL = torch.mean(s1+s2+s3+s4+s5+s6)
+        if NLL < 0:
+            raise Exception("NLL cannot be negative for PMF")
+        return NLL     
+{% endhighlight %}
+
 
 The learned paramaters $$\mu$$ and $$\alpha$$ determine a team's goal distribution. The assumption is that both teams' goal counts are conditionally independent, so the distribution of a game outcome (the joint distribution of both teams' goal counts) can be modelled as the product of each team's goal distribution. In this implementation, I limit the number of goals to a maximum of 10. The outcome distribution is captured in a 11x11 matrix, where rows represent team A and columns team B. The trace of the matrix represents the probability of a draw. The sum of all elements in the strictly upper triangular matrix represents the probability that team A loses. The sum of all elements in the strictly lower triangular matrix represents the probability that team A wins.
 
-TODO: Insert code snippet from mu, alpha to NB pmf, prob matrix
+{% highlight python %}
+import scipy as sc
+import numpy as np
+
+class MyUtil(object):
+    def calc_nb_param(self,mu,alpha):
+        r=1/alpha
+        p=r/(mu+r)
+        return p,r
+
+    def calc_nb_probs(self,muA,alphaA,muB,alphaB):
+        pA,rA=self.calc_nb_param(muA,alphaA)
+        pB,rB=self.calc_nb_param(muB,alphaB)
+        nbA = np.vectorize(sc.stats.nbinom)(rA[:,0],pA[:,0])
+        nbB = np.vectorize(sc.stats.nbinom)(rB[:,0],pB[:,0])
+        pdfA = np.array(list(map(lambda x:x.pmf(np.arange(11)),nbA)))
+        pdfB= np.array(list(map(lambda x:x.pmf(np.arange(11)),nbB)))
+        i=0
+        probs=np.zeros((pdfA.shape[0],pdfA.shape[1],pdfA.shape[1]))
+        for row in pdfA:
+            probs[i,:,:]=np.outer(row,pdfB[i,:])
+            i+=1
+        return probs
+
+    def tend_acc_nb(self,muA,alphaA,muB,alphaB,y):
+        probs=self.calc_nb_probs(muA,alphaA,muB,alphaB)
+        return self.multi_tendency(y,probs) 
+
+    def multi_tendency(self,y,y_prob):
+        i=0
+        result_pred = np.zeros(y.shape[0])
+        for row in y_prob:
+            winA = np.tril(row).sum()
+            winB = np.triu(row).sum()
+            draw = np.trace(row)
+            if winA >= winB and winA >= draw:
+                result_pred[i] = 1
+            if winB >= winA and winB >= draw:
+                result_pred[i] = -1
+            if draw >= winA and draw >= winB:
+                result_pred[i] = 0                
+            i+=1
+        act = np.vectorize(self.encode_tendency)(y[:,0],y[:,1])
+        return np.sum(act==result_pred)/y.shape[0]
+
+    def multi_result(self,y_prob,top_n,verbose=False,y=None):
+        ''' 
+        Checks how often the top n results in y_prob contain the true result
+        '''
+        N=y_prob.shape[0]
+        R=y_prob.shape[1]
+        C=y_prob.shape[2]
+        count=0
+        i=0
+        for row in y_prob:
+            probs=row.ravel()
+            idx_ravel = np.argsort(probs)[::-1][:top_n]
+            idx_unravel = self.get_index(R,C,idx_ravel)
+            probs = probs[idx_ravel].reshape((idx_ravel.shape[0],1))
+            if y is None: 
+                print("candidates \n",np.concatenate((idx_unravel,probs),axis=1))
+                continue
+            if np.equal(idx_unravel,y[i,:]).all(axis=1).any():
+                if verbose==True:
+                    print("right prediction for",y[i,:])
+                    print("candidates \n",np.concatenate((idx_unravel,probs),axis=1))
+                count+=1
+            elif verbose==True:
+                print("wrong prediction for",y[i,:])
+                print("candidates \n",np.concatenate((idx_unravel,probs),axis=1))
+            i+=1
+        return count/N
+
+    def get_index(self,rows,cols,idx):
+        col_idx = idx % rows
+        row_idx = idx // rows  
+        idx = np.column_stack((row_idx,col_idx))
+        return idx
+
+    def encode_tendency(self,x,y,win=1,draw=0,loss=-1):
+        if x > y:
+            return win
+        elif x == y:
+            return draw
+        else:
+            return loss
+{% endhighlight %}
 
 ## Results
-I evaluated the trained models on a validation set by calculating how accurately the model predicts a game's tendency (win/draw/loss). The model for the first match day of the group phase was trained on data from previous tournaments. The models for the following match days were trained on data from previous tournaments and from the preceding games of this world cup. A total of 7 models were trained: 3 for the group stage, 1 for the round of sixteen, 1 for the quarterfinals, 1 for the semfinals and 1 for the finals. The table below summarizes the results.
+I evaluated the trained models on a validation set by calculating how accurately the model predicts a game's tendency (win/draw/loss). 
 
-|               | Top-5 Accuracy | Top-3 Accuracy | Top-1 Accuracy | Tendency      | 
-|:-------------:| :------------: |:--------------:|:--------------:|:-------------:|
-| Group Match 1 | TODO           | TODO           | TODO           |               |
-| Group Match 2 | TODO           | TODO           | TODO           |               |
-| Group Match 3 | TODO           | TODO           | TODO           |               |
-| Round of 16   | TODO           | TODO           | TODO           |               |
-| Quarterfinal  | TODO           | TODO           | TODO           |               |
-| Semifinal     | TODO           | TODO           | TODO           |               |
-| 3rd Place     | TODO           | TODO           | TODO           |               |
-| Final         | TODO           | TODO           | TODO           |               |
+The model for the first match day of the group phase was trained on group stage data from previous tournaments. For the following group matches, the preceding group games of this world cup were additionally included. 
+
+For the knockout stage I used knockout stage data from previous tournaments excluding the ones decided by penalty shootouts. I ignored the scenario of penalty shootouts because the dataset only contains the final result and not the results before penalty shootouts. Including the shootouts would skew the goal distribution. Not including them makes it difficult to evaluate the accuracy of the prediction because the model simply isn't prepared for penalty shootouts.
+
+A total of 7 models were trained: 3 for the group stage, 1 for the round of sixteen, 1 for the quarterfinals, 1 for the semfinals and 1 for the finals. The table below summarizes the results.
+
+|                 | Top-5 Accuracy | Top-3 Accuracy | Top-1 Accuracy | Tendency      | 
+|:---------------:| :------------: |:--------------:|:--------------:|:-------------:|
+| Group Match 1   | 56.25%         | 31.25%         | 18.75%         | 56.25%        |
+| Group Match 2   | 50.00%         | 37.50%         | 12.50%         | 68.75%        |
+| Group Match 3   | 62.50%         | 43.75%         | 18.75%         | 56.25%        |
+| Round of 16[^2] | 25.00%         | 0.00%          | 0.00%          | 75.00%        |
+| Quarterfinal    | TODO           | TODO           | TODO           |               |
+| Semifinal       | TODO           | TODO           | TODO           |               |
+| 3rd Place       | TODO           | TODO           | TODO           |               |
+| Final           | TODO           | TODO           | TODO           |               |
 
 For top-n accuracy, I count a prediction as correct if the actual result is included in the n most probable outcomes. For tendency accuracy, a prediction is counted as correct if the outcome distribution assigns the most probability to the tendency of the actual outcome.
 
-Out of curiosity, I also trained standard sklearn classifiers (Gradient Tree Boosting, Random Forest, Logistic Regression) and a classifier neural network to see how accurately tendencies can be predicted. The result was an accuracy of roughly 50% for the group stage and 70% for the knockout stage on the validation set. I did not use any world cup 2018 data for the experiment.
-
-TODO
+Out of curiosity, I also trained standard sklearn classifiers (Gradient Tree Boosting, Random Forest, Logistic Regression) to see how accurately tendencies can be predicted. The result was an accuracy of roughly 50% for the group stage and 70% for the knockout stage on the validation set. 
 
 ## For Future Reference
-What I did not notice was that the market values of players increased immensely from one tournament to the next. According to statista, the most valuable team in Brazil 2014 was worth [622 million Euros][5]. The most valuable team in Russia 2018 was worth [1080 million euros][6]. I noticed this when playing around with statsmodels. I fit the model on data from previous world cups and made it predict results for world cup 2018 data. It ended up predicting very high means because the inverse of the used link function, the exponential function, is sensitive to changes of the linear predictor. For example, let $$w = [0.1;0.2;-0.01]^T$$ the learned coefficients and $$x_1 = [1;2;5]^T, x_2 = [1;10;5]^T$$ two different feature vectors. The predicted mean values the differ considerably:
+What I did not notice was that the market values of players increased immensely from one tournament to the next. According to statista, the most valuable team in Brazil 2014 was worth [622 million Euros][5]. The most valuable team in Russia 2018 was worth [1080 million euros][6]. It came to my attention when I was playing around with statsmodels. I fit the model on data from previous world cups and made it predict results for world cup 2018 data. It ended up predicting very high means because the inverse of the used link function, the exponential function, is sensitive to changes of the linear predictor. For example, let $$w = [0.1;0.2;-0.01]^T$$ the learned coefficients and $$x_1 = [1;2;5]^T, x_2 = [1;10;5]^T$$ two different feature vectors. The predicted mean values the differ considerably:
 \begin{align}
 \mu_1 &= \exp{(w^T x_1)} = \exp{( [1 2 5])} = \exp{(0.45)} \approx 1.57 \nonumber\newline 
-&\ll 7.77 \approx \\exp{(2.05)} = \exp{(w^T x_2)} = \mu_2
+&\ll 7.77 \approx \\exp{(2.05)} = \exp{(w^T x_2)} = \mu_2 \nonumber
 \end{align} 
 While inference using statsmodels produced useless results, the neural network approach was not as sensitive to the market value changes. For future projects, it would be a good idea to remove trends of such time series to prevent instabilities.
 
@@ -112,3 +254,7 @@ While the above points refer to the quality of the dataset, there is also someth
 [6]: https://www.statista.com/statistics/865737/value-of-the-national-teams-at-the-2018-world-cup/
 [7]: https://arxiv.org/abs/1703.04730
 [8]: https://en.wikipedia.org/wiki/Negative_binomial_distribution#Poisson_distribution
+[9]: https://github.com/ViviLearns2Code/ml-fifa/blob/master/data/final.csv
+[heatmap]: /images/fifa_heatmap.png "Heatmap"
+[^1]: The coefficients were significant on a 0.05 level.
+[^2]: 4 out of 8 games were decided by penalty shootouts
