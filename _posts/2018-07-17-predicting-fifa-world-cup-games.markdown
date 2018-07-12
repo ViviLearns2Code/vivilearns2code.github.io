@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Predicting FIFA World Cup Games"
-date:   2018-07-07 10:04:43 +0200
+date:   2018-07-11 10:04:43 +0200
 comments: true
 categories: project
 ---
@@ -234,7 +234,6 @@ For top-n accuracy, I count a prediction as correct if the actual result is incl
 
 Out of curiosity, I also trained standard sklearn classifiers (Gradient Tree Boosting, Random Forest, Logistic Regression) to see how accurately tendencies can be predicted. The result was an accuracy of roughly 50% for the group stage and 70% for the knockout stage on the validation set. 
 
-[## For Future Reference](#future-ref)
 ## For Future Reference
 What I did not notice was that the market values of players increased immensely from one tournament to the next. According to statista, the most valuable team in Brazil 2014 was worth [622 million Euros][5]. The most valuable team in Russia 2018 was worth [1080 million euros][6]. I fit the model on data from previous world cups and made it predict results for world cup 2018 data. It ended up predicting very high means because the inverse of the used link function, the exponential function, is sensitive to changes of the linear predictor. For example, let $$w = [0.1;0.2;-0.01]^T$$ the learned coefficients and $$x_1 = [1;2;5]^T, x_2 = [1;10;5]^T$$ two different feature vectors. The predicted mean values differ considerably:
 \begin{align}
@@ -259,4 +258,4 @@ While the above points refer to the quality of the dataset, there is also someth
 [10]: https://github.com/ViviLearns2Code/ml-fifa
 [heatmap]: /images/fifa_heatmap.png "Heatmap"
 [^1]: The coefficients were significant on a 0.05 level.
-[^2]: The results of these models need to be taken with a grain of salt due to scaling issues of the inference set, see [#future-red]
+[^2]: The results of these models need to be taken with a grain of salt due to scaling issues of the inference set, [see this section](#for-future-reference)
