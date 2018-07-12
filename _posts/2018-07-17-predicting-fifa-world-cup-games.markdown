@@ -223,11 +223,11 @@ A total of 6 models were trained: 3 for the group stage, 1 for the round of sixt
 
 |                   | Top-5 Accuracy | Top-3 Accuracy | Top-1 Accuracy | Tendency      | 
 |:------------------| :------------: |:--------------:|:--------------:|:-------------:|
-| Group Match 1[^2] | 56.25%         | 31.25%         | 18.75%         | 56.25%        |
+| Group Match 1     | 56.25%         | 31.25%         | 18.75%         | 56.25%        |
 | Group Match 2     | 50.00%         | 37.50%         | 12.50%         | 68.75%        |
 | Group Match 3     | 62.50%         | 43.75%         | 18.75%         | 56.25%        |
 | Round of 16[^2]   | 25.00%         | 0.00%          | 0.00%          | 75.00%        |
-| Quarterfinals     | 50.00%         | 50.00%         | 0.00%          | 75.00%        |
+| Quarterfinals[^3] | 50.00%         | 50.00%         | 0.00%          | 75.00%        |
 | Semifinals/Finals | TODO           | TODO           | TODO           | TODO          |
 
 For top-n accuracy, I count a prediction as correct if the actual result is included in the n most probable outcomes. For tendency accuracy, a prediction is counted as correct if the outcome distribution assigns the most probability to the tendency of the actual outcome.
@@ -235,12 +235,12 @@ For top-n accuracy, I count a prediction as correct if the actual result is incl
 Out of curiosity, I also trained standard sklearn classifiers (Gradient Tree Boosting, Random Forest, Logistic Regression) to see how accurately tendencies can be predicted. The result was an accuracy of roughly 50% for the group stage and 70% for the knockout stage on the validation set. 
 
 ## For Future Reference
-What I did not notice was that the market values of players increased immensely from one tournament to the next. According to statista, the most valuable team in Brazil 2014 was worth [622 million Euros][5]. The most valuable team in Russia 2018 was worth [1080 million euros][6]. I fit the model on data from previous world cups and made it predict results for world cup 2018 data. It ended up predicting very high means because the inverse of the used link function, the exponential function, is sensitive to changes of the linear predictor. For example, let $$w = [0.1;0.2;-0.01]^T$$ the learned coefficients and $$x_1 = [1;2;5]^T, x_2 = [1;10;5]^T$$ two different feature vectors. The predicted mean values differ considerably:
+The market values of players increase from one tournament to the next. According to statista, the most valuable team in Brazil 2014 was worth [622 million Euros][5]. The most valuable team in Russia 2018 was worth [1080 million euros][6]. If the values change too drastically, the model could end up predicting very high means because the inverse of the used link function, the exponential function, is sensitive to changes of the linear predictor. For example, let $$w = [0.1;0.2;-0.01]^T$$ the learned coefficients and $$x_1 = [1;2;5]^T, x_2 = [1;10;5]^T$$ two different feature vectors. The predicted mean values differ considerably:
 \begin{align}
 \mu_1 &= \exp{(w^T x_1)} = \exp{(0.45)} \approx 1.57 \nonumber\newline 
 &\ll 7.77 \approx \\exp{(2.05)} = \exp{(w^T x_2)} = \mu_2 \nonumber
 \end{align} 
-I did not notice it at first because I did not scale the inference set correctly for Group Day 1 and Round of 16. The inference set should be scaled with mean and standard deviation of the training set. When I trained these two models, the market values from the 2018 world cup leaked into the training set, so the mean and standard deviations were skewed. The other models did not have this problem because they were retrained with previous world cup 2018 data as the tournament progressed, so the high market values were accounted for. For future projects it is necessary to remove such trends from a time series to prevent instabilities.
+The market values did not increase enough to cause such problems, but for future projects it can be helpful to remove such trends from a time series to prevent instabilities.
 
 Another point for improvement is that the collected data lacks information on a team's current form. The used dataset includes historical encounters between two teams that face each other in a game, but these encounters are often very sparse. Games that took place years ago are not the best indicator for a team's current form. For example, Germany looked very good on paper with high market values and good historical records against its group stage rivals. The team still exited this world cup at the group stages. The outcome is not really surprising if one looks at Germany's most recent test games. 
 
@@ -258,4 +258,5 @@ While the above points refer to the quality of the dataset, there is also someth
 [10]: https://github.com/ViviLearns2Code/ml-fifa
 [heatmap]: /images/fifa_heatmap.png "Heatmap"
 [^1]: The coefficients were significant on a 0.05 level.
-[^2]: The results of these models need to be taken with a grain of salt due to scaling issues of the inference set, [see this section](#for-future-reference)
+[^2]: 3 out of 8 games ended with penalty shootouts
+[^3]: 1 out of 4 games ended with penalty shootouts
