@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Predicting FIFA World Cup Games"
-date:   2018-07-11 10:04:43 +0200
+date:   2018-07-17 10:04:43 +0200
 comments: true
 categories: project
 ---
