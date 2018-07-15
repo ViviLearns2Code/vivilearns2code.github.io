@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Predicting FIFA World Cup Games"
-date:   2018-07-17 10:04:43 +0200
+date:   2018-07-17 18:31:43 +0100
 comments: true
 categories: project
 ---
@@ -228,7 +228,7 @@ A total of 6 models were trained: 3 for the group stage, 1 for the round of sixt
 | Group Match 3     | 62.50%         | 43.75%         | 18.75%         | 56.25%        |
 | Round of 16[^2]   | 25.00%         | 0.00%          | 0.00%          | 75.00%        |
 | Quarterfinals[^3] | 50.00%         | 50.00%         | 0.00%          | 75.00%        |
-| Semifinals/Finals | TODO           | TODO           | TODO           | TODO          |
+| Semifinals/Finals | 25.00%         | 0.00%          | 0.00%          | 25.00%        |
 
 For top-n accuracy, I count a prediction as correct if the actual result is included in the n most probable outcomes. For tendency accuracy, a prediction is counted as correct if the outcome distribution assigns the most probability to the tendency of the actual outcome.
 
