@@ -244,6 +244,8 @@ The market values did not increase enough to cause such problems, but for future
 
 Another point for improvement is that the collected data lacks information on a team's current form. The used dataset includes historical encounters between two teams that face each other in a game, but these encounters are often very sparse. Games that took place years ago are not the best indicator for a team's current form. For example, Germany looked very good on paper with high market values and good historical records against its group stage rivals. The team still exited this world cup at the group stages. The outcome is not really surprising if one looks at Germany's most recent test games. 
 
+I also got feedback that using every game as two training samples with swapped roles between teams A and B ensures that the learned network won't depend on the order in which the teams are presented in the sample. 
+
 While the above points refer to the quality of the dataset, there is also something that can be improved on model side. Currently, I admittedly don't know how much I can trust the black box neural network, especially when it outputs results which seem counterintuitive to a seasoned football fan. I calculated the gradients of the predicted average $$\mu$$ and $$\alpha$$ w.r.t. the input features, but it did not make me trust the model. The paper [Understanding Black-box Predictions via Influence Functions][7] introduces the concept of influence functions which identify the training data points that influenced the prediction of a test datapoint the most. I am curious to find out if it can be applied to my football predictions!
 
 [1]: https://scrapy.org/
