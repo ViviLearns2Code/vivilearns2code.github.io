@@ -171,4 +171,3 @@ We can interpret the update rule as the value function (critic) evaluating how g
 [2]: https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf 
 [3]: http://cs231n.stanford.edu/slides/2017/cs231n_2017_lecture14.pdf
 [4]: https://danieltakeshi.github.io/2017/03/28/going-deeper-into-reinforcement-learning-fundamentals-of-policy-gradients/
-[5]: https://lilianweng.github.io/lil-log/2018/04/08/policy-gradient-algorithms.html#actor-critic
