@@ -28,11 +28,11 @@ $$\frac{d\text{loss}}{ds^{*}_{ij}} \quad \text{for}\ i\in\{1,\dots,N\}\ \text{an
 
 The following graph shows the computation graph for a normalized score $$s_{11}$$.
 
-![Test]({{"/images/BackpropSoftmax.svg"}})
+![Softmax1]({{"/images/BackpropSoftmax.svg"}})
 
 The normalized scores are then used to calculate the softmax probability of the actual class for each sample before the loss calculation.
 
-![Test]({{"/images/BackpropSoftmax2.svg"}})
+![Softmax2]({{"/images/BackpropSoftmax2.svg"}})
 
  The red arrows in the computation graphs indicate the gradient flow. The gradient from the loss function is propagated to the softmax nodes. Each softmax node receives the gradient
  
