@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Reinforcement Learning Notes"
-date:   2018-07-28 18:31:43 +0100
+date:   2018-07-29 18:31:43 +0100
 comments: true
 categories: reinforcement-learning
 ---
