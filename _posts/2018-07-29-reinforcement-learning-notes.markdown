@@ -160,12 +160,12 @@ For every iteration of our gradient descent algorithm, we sample $$N$$ trajector
 As this excellent [blog post][4] explains, the expression on the right hand side in \eqref{eq:reinforce2} can be written as
 
 \begin{align}
-\mathbb{E}\_{\tau} \Big[ r(\tau) \sum_{t=0}^T \nabla_{\theta}\log{\pi_{\theta}(a_t\vert s_t)} \Big] =  \mathbb{E}\_{\tau}\Big[ \sum_{t=0}^T \nabla_{\theta}\log{\pi_{\theta}(a_t\vert s_t)} \Big( \sum_{k = t}^T \gamma^{k-t} r_{k} \Big) \Big]
+\mathbb{E}\_{\tau} \Big[ r(\tau) \sum_{t=0}^T \nabla_{\theta}\log{\pi_{\theta}(a_t\vert s_t)} \Big] =  \mathbb{E}\_{\tau}\Big[ \sum_{t=0}^T \nabla_{\theta}\log{\pi_{\theta}(a_t\vert s_t)} \Big( \sum_{k = t}^T \gamma^{k-t} r_{k+1} \Big) \Big]
 \end{align}
 
 This connection is called causality, as future actions will not influence past rewards. An update which considers causality is given by 
 \begin{align}
-\theta_{i+1} = \theta_i + \alpha \frac{1}{N} \sum_{j=0}^N \Big( \sum_{t=0}^T \nabla_{\theta}\log{\pi_{\theta}(a_t^{(j)} \vert s_t^{(j)}) \Big( \sum_{k = t}^{T-1} \gamma^{k-t} r_{k}^{(j)} \Big)} \Big) \label{eq:reinforce4}
+\theta_{i+1} = \theta_i + \alpha \frac{1}{N} \sum_{j=0}^N \Big( \sum_{t=0}^T \nabla_{\theta}\log{\pi_{\theta}(a_t^{(j)} \vert s_t^{(j)}) \Big( \sum_{k = t}^{T-1} \gamma^{k-t} r_{k+1}^{(j)} \Big)} \Big) \label{eq:reinforce4}
 \end{align}
 
 REINFORCE trains slowly due to high variance of the gradient estimates. If we look at the update in \eqref{eq:reinforce3}, we see that the policy is updated in a way that raises a trajectory's probability scaled by $$r(\tau)$$. Good trajectories with high rewards are made more probable than bad trajectories. However, scaling with the raw value of observed trajectory rewards is not very stable. Imagine that we have one bad trajectory $$\tau_{bad}$$ with reward $$r_{bad} \lt 0$$ and a good trajectory $$\tau_{good}$$ with reward $$r_{good} \gt 0$$. Then, the update will make the policy assign less probability to $$\tau_{bad}$$ and more to $$\tau_{good}$$. However, if we shift all rewards upward by some constant $$c$$ such that both rewards become strictly positive, the policy will be updated in a way that assigns more probability to $$\tau_{bad}$$ and even more to $$\tau_{good}$$. If we shift them downward by a constant such that $$r_{good}$$ becomes zero, the policy will be moved into a direction that decreases the probability of $$\tau_{bad}$$, and that direction can be either away from, or toward $$\tau_{good}$$. Although the difference between the two trajectory rewards is always the same, the effect of the update changes every time.
