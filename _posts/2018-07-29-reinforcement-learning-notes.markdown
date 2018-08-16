@@ -84,7 +84,7 @@ q_{k+1}(s,a) = \sum_{s',r} p(S_{t+1}=s',R_{t}=r \vert S_t=s, A_t = a)[r+\gamma \
 \end{align} 
 The final state/action-values implicitly encode the optimal policy, because they can be used to choose the optimal (greedy) action $$\underset{a}{\mathrm{argmax}} \ q_{\pi}(s,a)$$ in every time step. There is not much stochasticity in the encoded policy unless there are ties for the maximal value.
 
-I created a toy example in which I use value iteration to find an optimal policy for the game of darts [here][5].
+<!---I created a toy example in which I use value iteration to find an optimal policy for the game of darts [here][5].-->
 
 ### Q-Learning
 Q-Learning does not require full knowledge of the MDP dynamics because it uses the observations it experiences instead of the transition probabilities. The action-value function of an optimal policy $$q_{\pi^{*}}$$ is approximated using the update rule
@@ -176,5 +176,5 @@ Using the true expectations instead of sample rewards reduces variance of our gr
 [2]: https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf 
 [3]: http://cs231n.stanford.edu/slides/2017/cs231n_2017_lecture14.pdf
 [4]: https://danieltakeshi.github.io/2017/03/28/going-deeper-into-reinforcement-learning-fundamentals-of-policy-gradients/
-[5]: {% post_url 2018-08-15-value-iteration-for-darts %}
+<!---[5]: {% post_url 2018-08-15-value-iteration-for-darts %}-->
 [6]: http://rail.eecs.berkeley.edu/deeprlcourse-fa17/]
