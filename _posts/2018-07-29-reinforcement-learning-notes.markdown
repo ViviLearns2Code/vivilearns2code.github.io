@@ -187,8 +187,13 @@ A natural choice for the baseline function is the expected reward under $$\pi$$ 
 
 Using the true expectations instead of sample rewards reduces variance of our gradient estimates. We can interpret the update rule as the value function $$q_{\pi}(s_t,a_t)$$ (critic) evaluating how good the action $$a_t$$ chosen by the policy (actor) is compared to the average $$v_{\pi}(s_t)$$. The value functions $$v_{\pi}$$ and $$q_{\pi}$$ can be learned with Q-Learning.
 
+## Further Reading
+[John Schulman's thesis][6] offers a good introduction to Reinforcement Learning and explains advanced policy optimization methods that are more stable and sample efficient, such as Trust Region Policy Optimization (TRPO). He also went on to develop [Proximal Policy Optimization (PPO)][7], which has the benefits of TRPO but is much simpler to implement. 
+
 [1]: http://incompleteideas.net/book/bookdraft2017nov5.pdf
 [2]: https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf 
 [3]: http://cs231n.stanford.edu/slides/2017/cs231n_2017_lecture14.pdf
 [4]: https://danieltakeshi.github.io/2017/03/28/going-deeper-into-reinforcement-learning-fundamentals-of-policy-gradients/
 [5]: http://rail.eecs.berkeley.edu/deeprlcourse-fa17/]
+[6]: http://joschu.net/docs/thesis.pdf
+[7]: https://arxiv.org/abs/1707.06347
