@@ -24,7 +24,7 @@ The agent chooses actions at each time step and transitions from one state to th
 The total reward in time step $$t$$ is the discounted sum of single rewards:
 
 \begin{align}
-G_t := \sum_{k=0}^{T-t-1} \gamma^k R_{t+k+1}
+G_t := \sum_{k=t}^{T-t-1} \gamma^k R_{k+1}
 \end{align}
 
 The action-value function is defined as the expected value of $$G_t$$ given a state $$s$$ and action $$a$$ in time step $$t$$ and following policy $$\pi$$ starting in $$t+1$$.
@@ -163,7 +163,7 @@ For every iteration of our gradient ascent algorithm, we sample $$N$$ trajectori
 As this excellent [blog post][4] explains, the expression on the right hand side in \eqref{eq:reinforce2} can be written as
 
 \begin{align}
-\mathbb{E}\_{\tau} \Big[ r(\tau) \sum_{t=0}^T \nabla_{\theta}\log{\pi_{\theta}(a_t\vert s_t)} \Big] =  \mathbb{E}\_{\tau}\Big[ \sum_{t=0}^T \nabla_{\theta}\log{\pi_{\theta}(a_t\vert s_t)} \Big( \sum_{k = t}^T \gamma^{k-t} r_{k+1} \Big) \Big]
+\mathbb{E}\_{\tau} \Big[ r(\tau) \sum_{t=0}^T \nabla_{\theta}\log{\pi_{\theta}(a_t\vert s_t)} \Big] =  \mathbb{E}\_{\tau}\Big[ \sum_{t=0}^T \nabla_{\theta}\log{\pi_{\theta}(a_t\vert s_t)} \Big( \sum_{k=t}^{T-1} \gamma^{k-t} r_{k+1} \Big) \Big]
 \end{align}
 
 This connection is called causality, as future actions will not influence past rewards. An update which considers causality is given by 
