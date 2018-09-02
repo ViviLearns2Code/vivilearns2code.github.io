@@ -12,11 +12,13 @@ In a reinforcement learning setting, an agent interacts with its environment and
 
 The components of a MDP are
 
-* A set of environment states $$\mathcal{S}$$. The state at a timestep $$t$$ contains all the information needed to make the next decision, i.e. no knowledge about past states is required.  
+* A set of environment states $$\mathcal{S}$$. The state at a timestep $$t$$ contains all the information needed to make the next decision, i.e. no knowledge about past states is required. A terminal/absorbing state is a state with zero rewards that cannot be left. 
 * A set of actions $$\mathcal{A}(s)$$ available at state $$s$$
 * Rewards $$R_{t+1} \in \mathbb{R}$$ as feedback to choosing an action $$A_{t}$$ in state $$S_{t}$$ in time step $$t$$
 * State transition probabilities $$p(S_t=s',R_t=r \vert S_{t-1}=s,A_{t-1}=a)$$ to characterize the dynamics of a MDP
 * A policy $$\pi$$, where $$\pi(a \vert s)$$ specifies the probability with which action $$a$$ is chosen in state $$s$$.
+
+The agent chooses actions at each time step and transitions from one state to the next until they arrive at a terminal state $s_T$. The sequence of states, actions and rewards $$s_0,a_0,r_1\ldots,s_T$$ defines an episode.  
 
 ### Definitions
 The total reward in time step $$t$$ is the discounted sum of single rewards:
@@ -151,7 +153,7 @@ but the problem is that we do not know the dynamics $$p(s_{t+1},r_{t+1} \vert s_
 &= \mathbb{E}\_{\tau}\Big[ r(\tau) \sum_{t=0}^T \nabla_{\theta}\log{\pi_{\theta}(a_t\vert s_t)} \Big] \label{eq:reinforce2}
 \end{align}
 
-For every iteration of our gradient descent algorithm, we sample $$N$$ trajectories under the current policy $$\pi_{\theta}$$ and evaluate the total discounted return of that trajectory. The update rule is
+For every iteration of our gradient ascent algorithm, we sample $$N$$ trajectories under the current policy $$\pi_{\theta}$$ and evaluate the total discounted return of that trajectory. The update rule is
 
 \begin{align}
 \theta_{i+1} = \theta_i + \alpha \frac{1}{N} \sum_{j}^N \Big( r(\tau^{(j)}) \sum_{t=0}^T \nabla_{\theta}\log{\pi_{\theta}(a_t^{(j)} \vert s_t^{(j)})} \Big) \label{eq:reinforce3}
