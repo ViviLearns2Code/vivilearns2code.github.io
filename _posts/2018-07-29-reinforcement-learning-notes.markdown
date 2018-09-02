@@ -24,7 +24,7 @@ The agent chooses actions at each time step and transitions from one state to th
 The total reward in time step $$t$$ is the discounted sum of single rewards:
 
 \begin{align}
-G_t := \sum_{k=t}^{T-1} \gamma^k R_{k+1}
+G_t := \sum_{k=t}^{T-1} \gamma^{k-t} R_{k+1}
 \end{align}
 
 The action-value function is defined as the expected value of $$G_t$$ given a state $$s$$ and action $$a$$ in time step $$t$$ and following policy $$\pi$$ starting in $$t+1$$.
@@ -56,19 +56,19 @@ Every policy satisfies the Bellman equations
 \begin{align}
 v_\pi(s) &= \mathbb{E}\_{\pi}[R_{t+1} + \gamma G_{t+1} | S_t=s]\notag \newline 
 &= \sum_{a} \pi(a|s) \sum_{s'} p(S_{t+1}=s' \vert S_{t}=s,A_{t}=a) \ldots \notag \newline
-& \ldots \sum_{r} p(R_{t}=r \vert S_{t}=s,A_{t}=a, S_{t+1}=s') [r+\gamma v_{\pi}(s')] \notag \newline
-&= \sum_{a} \pi(a|s) \sum_{s',r} p(S_{t+1}=s',R_{t}=r|s,a)[r+\gamma v_{\pi}(s')] 
+& \ldots \sum_{r} p(R_{t+1}=r \vert S_{t}=s,A_{t}=a, S_{t+1}=s') [r+\gamma v_{\pi}(s')] \notag \newline
+&= \sum_{a} \pi(a|s) \sum_{s',r} p(S_{t+1}=s',R_{t+1}=r|s,a)[r+\gamma v_{\pi}(s')] 
 \end{align}
 \begin{align}
 q_\pi(s,a) &= \mathbb{E}\_{\pi}[R_{t+1} + \gamma G_{t+1} | S_t=s, A_t=a] \notag \newline
-&= \sum_{s'} p(S_{t+1}=s',R_{t}=r|S_{t}=s,A_{t}=a)\ldots \notag \newline
+&= \sum_{s'} p(S_{t+1}=s',R_{t+1}=r|S_{t}=s,A_{t}=a)\ldots \notag \newline
 &\ldots [r+\gamma \sum_{a'} \pi(a' \vert s') q_{\pi}(s',a')]
 \end{align}
 Every optimal policy $$\pi^{*}$$ satisfies the Bellman Optimality Equations
 \begin{align}
 v_{\pi^{\*}}(s) &= \underset{a}{\mathrm{max}} \ q_{\pi^{*}}(s,a) \notag \newline
-&= \underset{a}{\mathrm{max}} \ \sum_{s',r} p(S_{t+1}=s',R_{t}=r \vert S_t=s, A_t = a)[r+\gamma v_{\pi^{\*}}(s')] \newline
-q_{\pi^{\*}}(s,a) &= \sum_{s',r} p(S_{t+1}=s',R_t=r \vert S_t=s,A_t=a)[r+\gamma \underset{a'}{\mathrm{max}} \ q_{\pi^{\*}}(s',a')]
+&= \underset{a}{\mathrm{max}} \ \sum_{s',r} p(S_{t+1}=s',R_{t+1}=r \vert S_t=s, A_t = a)[r+\gamma v_{\pi^{\*}}(s')] \newline
+q_{\pi^{\*}}(s,a) &= \sum_{s',r} p(S_{t+1}=s',R_{t+1}=r \vert S_t=s,A_t=a)[r+\gamma \underset{a'}{\mathrm{max}} \ q_{\pi^{\*}}(s',a')]
 \label{eq:bell1} \end{align}
 
 The Bellman equations can be exploited to find the optimal policy. Both Value Iteration and Q-Learning make use of them. 
@@ -76,13 +76,13 @@ The Bellman equations can be exploited to find the optimal policy. Both Value It
 ### Value Iteration
 The algorithm described in chapter 4.4 of [Sutton & Barto][1] uses the Bellman optimality equation as update rule
 \begin{align}
-v_{k+1}(s) = \underset{a}{\mathrm{max}} \ \sum_{s',r} p(S_{t+1}=s',R_{t}=r \vert S_t=s, A_t = a)[r+\gamma v_k(s')] \ \forall s\in\mathcal{S}
+v_{k+1}(s) = \underset{a}{\mathrm{max}} \ \sum_{s',r} p(S_{t+1}=s',R_{t+1}=r \vert S_t=s, A_t = a)[r+\gamma v_k(s')] \ \forall s\in\mathcal{S}
 \end{align} 
 What happens in the update rule is that the state-values which evaluate the current policy are approximated at every state $$s$$. At the same time, the policy is iteratively improved by taking the maximizing action in state $$s$$ (greedy policy). The iterations continue until $$\| v_k(s) - v_{k+1}(s) \|$$ is small enough for all states $$s$$. Value Iteration is a truncated version of Policy Iteration, where the approximation of the state-value function requires more than one iteration before the policy is improved by taking the maximizing action (see chapter 4.3 of [Sutton & Barto][1]). 
 
 In the CS231n lecture, value iteration is not carried out for the state-value function, but for the action-value function, which leads to the update rule
 \begin{align}
-q_{k+1}(s,a) = \sum_{s',r} p(S_{t+1}=s',R_{t}=r \vert S_t=s, A_t = a)[r+\gamma \underset{a'}{\mathrm{max}} \ q_k(s',a')]
+q_{k+1}(s,a) = \sum_{s',r} p(S_{t+1}=s',R_{t+1}=r \vert S_t=s, A_t = a)[r+\gamma \underset{a'}{\mathrm{max}} \ q_k(s',a')]
 \end{align} 
 The final state/action-values implicitly encode the optimal policy, because they can be used to choose the optimal (greedy) action $$\underset{a}{\mathrm{argmax}} \ q_{\pi}(s,a)$$ in every time step. There is not much stochasticity in the encoded policy unless there are ties for the maximal value.
 
