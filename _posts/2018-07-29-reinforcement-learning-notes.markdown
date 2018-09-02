@@ -100,13 +100,14 @@ A requirement for Q-Learning to work is that every state-action pair is visited 
 Deep Q-Learning is the topic of the paper [Playing Atari with Deep Reinforcement Learning][2], which is also referenced by the CS231n course. In this paper, the action-value function of the optimal policy is approximated by a neural network $$q(s,a;\theta) \approx q_{\pi{*}}(s,a)$$. This moves the complexity of calculating the action-value for all action/state pairs (which can be a lot) to calculating the parameters $$\theta$$. Since the action-value function fulfills the Bellman optimality equation \eqref{eq:bell1}, the neural network approximation should eventually also fulfill the equation across all state-action pairs. Therefore, the ideal loss function in iteration $$i$$ is
 
 \begin{align}
-L(\theta_i) &= \frac{1}{2} \mathbb{E}\_{S_t,A_t} \Big[ \big( \mathbb{E}\_{S_{t+1},R_{t+1}} [ R_{t+1} +\gamma \underset{A_{t+1}}{\mathrm{max}} \ q(S_{t+1},A_{t+1};\theta_{i-1}) \vert  S_t, A_t] - q(S_t,A_t;\theta_i)\big )^2 \Big]
+L(\theta_i) &= \frac{1}{2} \mathbb{E}\_{S_t,A_t} \Big[ \big( &\mathbb{E}\_{S_{t+1},R_{t+1}} [ R_{t+1} +\gamma \underset{A_{t+1}}{\mathrm{max}} \ q(S_{t+1},A_{t+1};\theta_{i-1}) \vert  S_t, A_t] \notag \newline
+&- q(S_t,A_t;\theta_i)\big )^2 \Big]
 \end{align}
 
 with the gradient
 \begin{align}
-\nabla_{\theta_i} L(\theta_i) &= -\mathbb{E}\_{S_t,A_t} \Big[ \Big( \mathbb{E}\_{S_{t+1},R_{t+1}} [ R_{t+1} +\gamma \underset{A_{t+1}}{\mathrm{max}} \ q(S_{t+1},A_{t+1};\theta_{i-1}) \vert  S_t, A_t] - q(S_t,A_t;\theta_i)\Big) \notag \newline 
-&\ldots \nabla_{\theta_i} q(S_t,A_t,\theta_{i})\Big]
+\nabla_{\theta_i} L(\theta_i) &= -\mathbb{E}\_{S_t,A_t} \Big[ \Big( &\mathbb{E}\_{S_{t+1},R_{t+1}} [ R_{t+1} +\gamma \underset{A_{t+1}}{\mathrm{max}} \ q(S_{t+1},A_{t+1};\theta_{i-1}) \vert  S_t, A_t] \notag \newline 
+&- q(S_t,A_t;\theta_i)\Big) \nabla_{\theta_i} q(S_t,A_t,\theta_{i})\Big]
 \end{align}
 
 Since calculating the exact expectation is intractable, we use calculate the loss for mini-batches of $$N$$ observations. These observations are randomnly drawn from a so-called replay memory $$\mathcal{D}$$ which contains all previously experienced transitions $$(s_t,a_t,r_{t+1},s_{t+1})$$. Drawing from the replay memory has the advantage that you don't pick the transitions in the sequence in which they were experienced to avoid correlations. 
