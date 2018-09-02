@@ -18,13 +18,13 @@ The components of a MDP are
 * State transition probabilities $$p(S_t=s',R_t=r \vert S_{t-1}=s,A_{t-1}=a)$$ to characterize the dynamics of a MDP
 * A policy $$\pi$$, where $$\pi(a \vert s)$$ specifies the probability with which action $$a$$ is chosen in state $$s$$.
 
-The agent chooses actions at each time step and transitions from one state to the next until they arrive at a terminal state $s_T$. The sequence of states, actions and rewards $$s_0,a_0,r_1\ldots,s_T$$ defines an episode.  
+The agent chooses actions at each time step and transitions from one state to the next until they arrive at a terminal state $$s_T$$. The sequence of states, actions and rewards $$s_0,a_0,r_1\ldots,s_T$$ defines an episode.  
 
 ### Definitions
 The total reward in time step $$t$$ is the discounted sum of single rewards:
 
 \begin{align}
-G_t := \sum_{k=0}^T \gamma^k R_{t+k+1}
+G_t := \sum_{k=0}^{T-t-1} \gamma^k R_{t+k+1}
 \end{align}
 
 The action-value function is defined as the expected value of $$G_t$$ given a state $$s$$ and action $$a$$ in time step $$t$$ and following policy $$\pi$$ starting in $$t+1$$.
