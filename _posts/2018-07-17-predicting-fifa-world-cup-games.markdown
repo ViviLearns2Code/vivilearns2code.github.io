@@ -3,9 +3,14 @@ layout: post
 title:  "Predicting FIFA World Cup Games"
 date:   2018-07-17 18:31:43 +0100
 comments: true
-categories: project
+categories: [project, machine-learning]
+excerpt_separator: <!--more-->
 ---
-As a football enthusiast and a beginner in machine learning, the FIFA World Cup was the perfect "first project". I decided to build a model which would predict the exact number of goals scored by each team in a game. A lot of literature which I have found regarding football predictions is focused on predicting the correct tendency (win/draw/loss) and the models are trained on and applied to football league systems such as the English Premier League. The world cup only takes place every four years, which reduces the amount of available data. It is divided into a group stage and a knockout stage and teams which have never encountered each other before often produce surprising results. 
+As a football enthusiast and a beginner in machine learning, the FIFA World Cup was the perfect "first project". I decided to build a model which would predict the exact number of goals scored by each team in a game. 
+
+<!--more-->
+
+A lot of literature which I have found regarding football predictions is focused on predicting the correct tendency (win/draw/loss) and the models are trained on and applied to football league systems such as the English Premier League. The world cup only takes place every four years, which reduces the amount of available data. It is divided into a group stage and a knockout stage and teams which have never encountered each other before often produce surprising results. 
 
 I uploaded all relevant files with [this repo][10].
 

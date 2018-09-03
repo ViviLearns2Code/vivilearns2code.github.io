@@ -4,8 +4,11 @@ title:  "Reinforcement Learning Notes"
 date:   2018-07-29 18:31:43 +0100
 comments: true
 categories: reinforcement-learning
+excerpt_separator: <!--more-->
 ---
 [Part 14 of Stanford's CS231n lecture][3] was about Reinforcement Learning. The content of the slides was very dense, so I looked up a couple of concepts to understand the concepts better.
+
+<!--more-->
 
 ## The Setting
 In a reinforcement learning setting, an agent interacts with its environment and receives feedback for every interaction. The feedback comes in the form of numeric rewards which depend on the actions of the agent in every time step. The goal is to maximize the total reward by choosing the best course of actions. This dynamic optimization problem can be formalized as a Markov Decision Process (MDP). Possible applications are for example algorithms that learn to play games or robots that learn to move.
