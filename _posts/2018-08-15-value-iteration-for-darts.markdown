@@ -15,14 +15,14 @@ The darts game which we consider starts at 301 points. A player has three attemp
 ![dartboard]({{"/images/dartboard.png"}})
 
 ## The Problem
+As nice as it would have been to simulate a robot arm and have it use a model-free learning algorithm, I made up a toy model with transition probabilities and used value iteration to learn the optimal policy. The coding can be found in [this github repo][3] under the folder `value_iteration`.
+
 The board is modelled as an array which lists all fields starting from the top field in a clockwise manner. The fields are encoded as numbers from 0 to 81 (more about that later), whereas 82 completely misses the board. The scores associated to the field encodings can be obtained by accessing the `SCORE` array with the encoding as index.
 
 {% highlight python %}
 BOARD = np.array([20, 1, 18, 4, 13, 9, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5])
 SCORE = np.concatenate((BOARD, BOARD, 2 * BOARD, 3 * BOARD, [25, 50, 0]))
 {% endhighlight %}
-
-As nice as it would have been to simulate a robot arm and have it use a model-free learning algorithm, I made up a toy model with transition probabilities and used value iteration to learn the optimal policy. The coding can be found in [this github repo][3] under the folder `value_iteration`.
 
 Similarly to [Baird (2018)][1], we define the Markov Decision Problem with
 * A set of states $$\mathcal{S} = \{ (s_0, s_k, k ) \vert s_0, s_k \in \{0,\ldots,301\}, k \in \{0,1,2\}, s_0 \ge s_k \ge s_0 - 60k\}$$
