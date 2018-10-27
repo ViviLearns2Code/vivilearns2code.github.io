@@ -189,10 +189,10 @@ A natural choice for the baseline function is the expected reward under $$\pi$$ 
 \theta_{i+1} &= \theta_i + \alpha \frac{1}{N} \sum_{j=0}^N \Big( \sum_{t=0}^T \nabla_{\theta}\log{\pi_{\theta}(a_t^{(j)} \vert s_t^{(j)}) \Big( q_{\pi}(s_t^{(j)},a_t^{(j)}) - v_{\pi}(s_t^{(j)})\Big)} \Big)
 \end{align}
 
-Using the true expectations instead of sample rewards reduces variance of our gradient estimates. We can interpret the update rule as the value function $$q_{\pi}(s_t,a_t)$$ (critic) evaluating how good the action $$a_t$$ chosen by the policy (actor) is compared to the average $$v_{\pi}(s_t)$$. The value functions $$v_{\pi}$$ and $$q_{\pi}$$ can be learned with Q-Learning.
+Using the true expectations instead of sample rewards reduces variance of our gradient estimates. We can interpret the update rule as the value function $$q_{\pi}(s_t,a_t)$$ (critic) evaluating how good the action $$a_t$$ chosen by the policy (actor) is compared to the average $$v_{\pi}(s_t)$$. The difference is also called "advantage", and one method to estimate this advantage term is [Generalized Advantage Estimation][8].
 
 ## Further Reading
-[John Schulman's thesis][6] offers a good introduction to Reinforcement Learning and explains advanced policy optimization methods that are more stable and sample efficient, such as Trust Region Policy Optimization (TRPO). He also went on to develop [Proximal Policy Optimization (PPO)][7], which has the benefits of TRPO but is much simpler to implement. 
+[John Schulman's thesis][6] offers a good introduction to Reinforcement Learning and explains advanced policy optimization methods that are more stable and sample efficient, such as Trust Region Policy Optimization (TRPO). He also went on to develop [Proximal Policy Optimization (PPO)][7], which has the benefits of TRPO but is much simpler to implement. The key idea of both is that the policy update should not be "too big", especially not as we get closer to an optimum. I have implemented both PPO and vanilla REINFORCE [here][9].
 
 [1]: http://incompleteideas.net/book/bookdraft2017nov5.pdf
 [2]: https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf 
@@ -201,3 +201,5 @@ Using the true expectations instead of sample rewards reduces variance of our gr
 [5]: http://rail.eecs.berkeley.edu/deeprlcourse-fa17/]
 [6]: http://joschu.net/docs/thesis.pdf
 [7]: https://arxiv.org/abs/1707.06347
+[8]: https://arxiv.org/abs/1506.02438
+[9]: https://github.com/ViviLearns2Code/rl/tree/master/policy_gradients
