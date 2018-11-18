@@ -46,14 +46,15 @@ After experimenting around for a while, the first preprocessing stage was define
 * discard everything but the processed text and the sentiment class
 * store processed dataset in parquet files
 
-The original dataset had 5,996,996 reviews. What remains is a 2GB dataset with 5,965,076 reviews identified as English reviews. 
+The above steps are applied before using spaCy. With spaCy, we can drop all stop words (important words like "not" or "no" were removed from spacy's stop word list beforehand), punctuations and non-alphabetic tokens. Here we use the recommended `nlp.pipe()`, which is internally optimized for processing sequences of texts. After processing, we throw away all reviews with less than 10 tokens, leaving a 2GB dataset with
 
-The above steps are applied before using spaCy. With spaCy, we can drop all stop words (important words like "not" or "no" were removed from spacy's stop word list beforehand), punctuations and non-alphabetic tokens. Here we use the recommended `nlp.pipe()`, which is internally optimized for processing sequences of texts. After processing, we throw away all reviews with less than 10 tokens, leaving
+* 5,945,754 English reviews, among which
+* 3,940,130 are positive with an average length of 96.93 tokens
+* 666,129 are neutral with an average length of 131.375 tokens
+* 1,339,495 are negative with an average length of 140.80 tokens
 
-* 5,932,450 English reviews, among which
-* 3,921,225 are positive with an average length of 110.20 tokens
-* 662,537 are neutral with an average length of 115.37 tokens
-* 1,330,047 are negative with an average length of 109.32 tokens
+Below is a distribution plot for the number of tokens in each sentiment class.
+![distplot tokens][distplot]
 
 With spaCy, we can also look at the words identified as out-of-vocabulary. These words are mostly typos or exotic food names (_"Schweinsbraten"_, _"etouffee"_, _"sopapillas"_). We replace these words with a placeholder "UNK". There is one exception to the rule: spaCy is currently unable to recognize the word "number" and we keep the word as it is.
 
@@ -61,10 +62,12 @@ SpaCy's part-of-speech tagger[^4] comes in very handy when it comes to categoriz
 
 ![word cloud][cloud]
 
-After these first insights, we can proceed with the actual sentiment analysis in the next blog post.
+After these first insights, we can proceed with the actual sentiment analysis in the next blog post. The relevant code will be uploaded to [this repo](https://github.com/ViviLearns2Code/yelp-review).
+
 
 [^1]: Yelp documents their datasets [here](https://www.yelp.com/dataset/documentation/main)
 [^2]: For language identification, one possible library is [langid](https://github.com/saffsd/langid.py)
 [^3]: See [Yelp review scale](https://www.yelp.com/developers/display_requirements)
 [cloud]: {{"/images/adjective_cloud.png"}}
+[distplot]: {{"/images/token_distribution.png"}}
 [^4]: There are two token attributes `pos_` and `tag_`. The `pos_` attribute covers the [word type](http://universaldependencies.org/u/pos/) whereas the `tag_`attribute has more [detail](https://www.ling.upenn.edu/courses/Fall_2003/ling001/penn_treebank_pos.html)
