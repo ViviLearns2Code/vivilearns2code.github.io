@@ -48,10 +48,12 @@ After experimenting around for a while, the first preprocessing stage was define
 
 The above steps are applied before using spaCy. With spaCy, we can drop all stop words (important words like "not" or "no" were removed from spacy's stop word list beforehand), punctuations and non-alphabetic tokens. Here we use the recommended `nlp.pipe()`, which is internally optimized for processing sequences of texts. After processing, we throw away all reviews with less than 10 tokens, leaving a 2GB dataset with
 
-* 5,945,754 English reviews, among which
-* 3,940,130 are positive with an average length of 96.93 tokens
-* 666,129 are neutral with an average length of 131.375 tokens
-* 1,339,495 are negative with an average length of 140.80 tokens
+* 5,946,010 English reviews, among which
+* 3,940,287 are positive with an average length of 97.71 tokens
+* 666,151 are neutral with an average length of 132.77 tokens
+* 1,339,572 are negative with an average length of 142.32 tokens
+
+The above numbers show that the dataset is imbalanced. We will keep this in mind when we train the actual model for sentiment classification. 
 
 Below is a distribution plot for the number of tokens in each sentiment class.
 ![distplot tokens][distplot]
