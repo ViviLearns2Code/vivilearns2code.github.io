@@ -35,7 +35,7 @@ The Yelp reviews dataset is a 4GB file with line-delimited JSON objects. With `h
     "cool":1
 }
 ```
-The dataset has a size too big to be comfortably loaded into memory at once with pandas. We therefore looked into [Dask](https://dask.org/), a pandas-compatible library which can handle big data. With dask, we can load and (parallelly) process partitions of big dataframes.
+The dataset has a size too big to be comfortably loaded into memory at once with pandas. I therefore looked into [Dask](https://dask.org/), a pandas-compatible library which can handle big data. With dask, I can load and (parallelly) process partitions of big dataframes.
 
 After experimenting around for a while, the first preprocessing stage was defined with the following steps
 * replace non-English reviews with a placeholder text "NON_ENGLISH_REVIEW"[^2]
@@ -46,25 +46,68 @@ After experimenting around for a while, the first preprocessing stage was define
 * discard everything but the processed text and the sentiment class
 * store processed dataset in parquet files
 
-The above steps are applied before using spaCy. With spaCy, we can drop all stop words (important words like "not" or "no" were removed from spacy's stop word list beforehand), punctuations and non-alphabetic tokens. Here we use the recommended `nlp.pipe()`, which is internally optimized for processing sequences of texts. After processing, we throw away all reviews with less than 10 tokens, leaving a 2GB dataset with
+The above steps are applied before using spaCy. With spaCy, I can drop punctuations and non-alphabetic tokens. Since spaCy's stop word list contains words which I consider important for sentiment analysis (e.g. "not", "very"), I use our own custom stop word list. I use the recommended `nlp.pipe()`, which is internally optimized for processing sequences of texts. After processing, I throw away all reviews with less than 5 tokens, leaving a 2GB dataset with
 
-* 5,946,010 English reviews, among which
-* 3,940,287 are positive with an average length of 97.71 tokens
-* 666,151 are neutral with an average length of 132.77 tokens
-* 1,339,572 are negative with an average length of 142.32 tokens
+* 5,959,966 English reviews, among which
+* 3,951,361 are positive with an average length of 61.67 tokens
+* 667,544 are neutral with an average length of 89.49 tokens
+* 1,341,061 are negative with an average length of 84.07 tokens
 
-The above numbers show that the dataset is imbalanced. We will keep this in mind when we train the actual model for sentiment classification. 
+The above numbers show that the dataset is imbalanced - there are almost six times as many samples for the positive class as for the neutral class. This will be important when the model for sentiment classification is trained. 
 
 Below is a distribution plot for the number of tokens in each sentiment class.
 ![distplot tokens][distplot]
 
-With spaCy, we can also look at the words identified as out-of-vocabulary. These words are mostly typos or exotic food names (_"Schweinsbraten"_, _"etouffee"_, _"sopapillas"_). We replace these words with a placeholder "UNK". There is one exception to the rule: spaCy is currently unable to recognize the word "number" and we keep the word as it is.
+With spaCy, I can also look at the words identified as out-of-vocabulary. These words are mostly typos or exotic food names (_"Schweinsbraten"_, _"etouffee"_, _"sopapillas"_). I marked these words and filtered them out. There is one exception to the rule: spaCy is currently unable to recognize the word "number", so I keep the word as it is.
 
-SpaCy's part-of-speech tagger[^4] comes in very handy when it comes to categorizing words as adjectives, nouns or verbs. We use this information to analyze which adjectives are predominantly used for different sentiment classes. The word cloud at the top of the picture shows the 50 most used adjectives in positive reviews, the word cloud in the middle shows the top 50 words for neutral reviews and the word cloud at the bottom shows the top 50 words for negative reviews. We can see that there is a difference, though words like "nice", "good" or "great" appear in all sentiment classes. Unfortunately, the word clouds do not take negated adjectives like "not very good" into account.
-
+SpaCy's part-of-speech tagger[^4] is very useful when it comes to categorizing words as adjectives, nouns or verbs. I use this information to analyze which adjectives are predominantly used for different sentiment classes. The word cloud at the top of the picture shows the 50 most used adjectives in positive reviews, the word cloud in the middle shows the top 50 words for neutral reviews and the word cloud at the bottom shows the top 50 words for negative reviews. It is easy to see that the sentiment class differ, and words like "nice", "good" or "great" appear in all classes with a different distribution. 
 ![word cloud][cloud]
 
-After these first insights, we can proceed with the actual sentiment analysis in the next blog post. The relevant code will be uploaded to [this repo](https://github.com/ViviLearns2Code/yelp-review).
+When words (unigrams) like "great" appear in a negative review, it is often in conjunction with a negation ("not great"). This is a motivation to consider unigrams as well as bigrams and trigrams for vocabulary determination. I use gensim's [Phrases](https://radimrehurek.com/gensim/models/phrases.html) model and [Dictionary](https://radimrehurek.com/gensim/corpora/dictionary.html) as preparation for later text vectorization methods like TF-IDF. I limit the vocabulary size out of performance concerns with `filter_extremes`.
+
+{% highlight python %}
+def extract_phrases(df):
+    """
+    Train bigram and trigram phrasers
+    Input:
+    - df: Dataframe with column "text"
+    """
+    def wrapper(generator):
+        for item in generator:
+            yield item.text.split(" ")  
+
+    vocab = Counter()
+    vocab_final = Counter()
+    bigram_phrases = Phrases(wrapper(df.itertuples()), min_count=5, threshold=1)
+    bigram = Phraser(bigram_phrases)
+    trigram_phrases = Phrases(bigram[wrapper(df.itertuples())], min_count=5, threshold=1)
+    trigram = Phraser(trigram_phrases)
+    bigram.save("./vocab/bigram")
+    trigram.save("./vocab/trigram")
+
+def create_dct(df,bigram,trigram,save):
+    """
+    Create dictionary from dataframe
+    Input:
+    - df: Dateframe with column "text"
+    - bigram: bigram phraser
+    - trigram: trigram phraser
+    - save: if true, vocabulary is saved in files
+    """
+    def wrapper_phrase(generator):
+        for item in generator:
+            ngram  = trigram[bigram[item.text.split(" ")]]
+            yield ngram
+    dct = Dictionary.from_documents(wrapper_phrase(df.itertuples()))
+    dct.filter_extremes(no_below=1000, no_above=0.80, keep_n=150000)
+    if save == True:
+        dct.save_as_text("./vocab/gensim_dct.txt")
+        dct.save("./vocab/gensim_dct")
+{% endhighlight %}
+
+The final vocabulary has around 15600 ngrams. Some example ngrams are *great_atmosphere*, *too_expensive*, *definitely_come_back*. Surprisingly, gensim's Phraser did not identify the ngrams "not_great" and "not_good". Instead, there are other combinations involving negations: *not_bad_either*, *not_big_fan*, *not_bother*, etc.
+
+In the next blog post, I will describe how I did the actual sentiment analysis. The relevant code will be uploaded to [this repo](https://github.com/ViviLearns2Code/yelp-review).
 
 
 [^1]: Yelp documents their datasets [here](https://www.yelp.com/dataset/documentation/main)
