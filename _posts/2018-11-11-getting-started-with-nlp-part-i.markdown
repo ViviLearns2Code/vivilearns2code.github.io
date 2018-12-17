@@ -46,7 +46,7 @@ After experimenting around for a while, the first preprocessing stage was define
 * discard everything but the processed text and the sentiment class
 * store processed dataset in parquet files
 
-The above steps are applied before using spaCy. With spaCy, I can drop punctuations and non-alphabetic tokens. Since spaCy's stop word list contains words which I consider important for sentiment analysis (e.g. "not", "very"), I use our own custom stop word list. I use the recommended `nlp.pipe()`, which is internally optimized for processing sequences of texts. After processing, I throw away all reviews with less than 5 tokens, leaving a 2GB dataset with
+The above steps are applied before using spaCy. With spaCy, I can drop punctuations and non-alphabetic tokens. Since spaCy's stop word list contains words which I consider important for sentiment analysis (e.g. "not", "very"), a custom stop word list is used. After processing, I throw away all reviews with less than 5 tokens, leaving a 1.5GB dataset with
 
 * 5,959,966 English reviews, among which
 * 3,951,361 are positive with an average length of 61.67 tokens
@@ -66,6 +66,9 @@ SpaCy's part-of-speech tagger[^4] is very useful when it comes to categorizing w
 When words (unigrams) like "great" appear in a negative review, it is often in conjunction with a negation ("not great"). This is a motivation to consider unigrams as well as bigrams and trigrams for vocabulary determination. I use gensim's [Phrases](https://radimrehurek.com/gensim/models/phrases.html) model and [Dictionary](https://radimrehurek.com/gensim/corpora/dictionary.html) as preparation for later text vectorization methods like TF-IDF. I limit the vocabulary size out of performance concerns with `filter_extremes`.
 
 {% highlight python %}
+from gensim.models.phrases import Phrases, Phraser
+from gensim.corpora import Dictionary
+
 def extract_phrases(df):
     """
     Train bigram and trigram phrasers
