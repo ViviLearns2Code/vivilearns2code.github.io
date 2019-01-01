@@ -68,12 +68,13 @@ When words (unigrams) like "great" appear in a negative review, it is often in c
 {% highlight python %}
 from gensim.models.phrases import Phrases, Phraser
 from gensim.corpora import Dictionary
+from collections import Counter
 
 def extract_phrases(df):
     """
     Train bigram and trigram phrasers
     Input:
-    - df: Dataframe with column "text"
+    - df: dataframe with column "text"
     """
     def wrapper(generator):
         for item in generator:
@@ -92,7 +93,7 @@ def create_dct(df,bigram,trigram,save):
     """
     Create dictionary from dataframe
     Input:
-    - df: Dateframe with column "text"
+    - df: dataframe with column "text"
     - bigram: bigram phraser
     - trigram: trigram phraser
     - save: if true, vocabulary is saved in files
