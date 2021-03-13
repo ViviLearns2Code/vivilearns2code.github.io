@@ -5,7 +5,6 @@ date:   2021-03-11 13:12:30 +0200
 categories: k8s
 comments: true
 ---
-# Writing Controllers for Kubernetes Custom Resources
 Kubernetes has become omnipresent. Whether you're part of a development team looking to deploy highly available apps and services or part of a data science team looking to run machine learning workloads in a scalable way - Kubernetes is often the platform of choice. The ecosystem around Kubernetes has grown considerably, and one of the example projects based on top of Kubernetes is Kubeflow, a ML platform offering distributed training, workflow orchestration and many other features. I enjoyed working with it and exploring its features a lot and it makes life so much easier for data scientisis who just want to process their data and train their models in python without worrying about the low-level stuff. However, having amazing tools like Kubeflow doesn't eliminate the need for an engineering mindset and a basic curiosity about what happens under the hood of the system. A DevOps knowledge bottleneck within a data science team can be fatal - once something is broken in the cluster, a team full of data scientists will be blocked and at a loss.
 
 I was curious to learn more about Kubernetes. 

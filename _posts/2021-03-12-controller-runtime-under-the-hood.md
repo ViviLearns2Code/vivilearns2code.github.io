@@ -5,7 +5,6 @@ date:   2021-03-12 17:16:30 +0200
 categories: k8s
 comments: true
 ---
-# Controller-Runtime Under The Hood
 When I first got started with controllers, it was difficult for me to understand how `client-go`, `controller-runtime` and `kubebuilder` were related to each other. I read up on [client-go concepts](https://github.com/kubernetes/sample-controller/blob/master/docs/controller-client-go.md), and knew that kubebuilder was based on controller-runtime and controller-runtime somehow based on client-go, but it wasn't clear to me where for example client-go's informers came into controller-runtime. This post will hopefully help other curious people like me to get a better picture of controller-runtime.
 
 We start our exploration of controller-runtime from our simplified custom code, so that it is easier to see what we need to write ourselves and where the library comes in. Basically, we need to do the following things ourselves:
