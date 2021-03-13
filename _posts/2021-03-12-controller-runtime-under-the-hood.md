@@ -198,7 +198,7 @@ The definition of that struct is spread across several files (`pkg/cache/informe
 |`List` | cached read access | same as above |
 |`GetInformer` | retrieves informer for a given runtime object (creates one if doesn't exist) |returns  `cache.SharedIndexInformer` |
 |`GetInformerForKind`| same as above, but for GKV | same as above |
-|`Start`| runs all informers, meaning it will list & watch the k8s apiserver for resource updates and add objects to the Delta Fifo queue | `cache.ListWatch` |
+|`Start`| runs all informers, meaning it will list & watch the k8s apiserver for resource updates | `cache.ListWatch` |
 |`WaitForCacheSync`| waits for all caches to sync | `cache.WaitForCacheSync` |
 |`IndexField` | adds field indices over the cache | `cache.SharedIndexInformer.AddIndexers` |
 
@@ -348,4 +348,4 @@ func (c *Controller) Start(ctx context.Context) error {
 ## In a nutshell
 And finally, here is a picture to summarize what we have found out:
 
-![img](images/controller-runtime.svg)
+![img](../images/controller-runtime.svg)
