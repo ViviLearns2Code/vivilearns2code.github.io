@@ -13,9 +13,9 @@
 # you will see them accessed via {{ site.title }}, {{ site.email }}, and so on.
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
-title: Learning like a machine
+title: Learning Snippets
 description: >- # this means to ignore newlines until "baseurl:"
-  Notes on all things related to Machine Learning
+  Notes on All Things Tech
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://vivilearns2code.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 github_username:  vivilearns2code
@@ -27,12 +27,16 @@ disqus:
     shortname: vivilearns2code
 # Build settings
 markdown: kramdown
-theme: minima
+#theme: minima
+minima:
+  skin: dark
 plugins:
+  - jekll-remote-theme
   - jekyll-feed
   - jekyll-seo-tag
   - jekyll-paginate
 paginate: 10  
+remote_theme: jekyll/minima
 future: false
 # set to true to show excerpts on the homepage
 show_excerpts: true
