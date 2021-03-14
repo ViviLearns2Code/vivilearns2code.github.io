@@ -5,11 +5,11 @@ date:   2021-03-11 13:12:30 +0200
 categories: k8s
 comments: true
 ---
-Kubernetes has become omnipresent. Whether you're part of a development team looking to deploy highly available apps or part of a data science team looking to run machine learning workloads in a scalable way - Kubernetes is often the platform of choice. The ecosystem around Kubernetes has grown considerably, and last year I used a project called Kubeflow a lot. Kubeflow is a ML platform on top of Kubernetes offering features such as distributed training or workflow orchestration. It makes life much easier if you just want to process your data and train your models in Python without worrying about the low-level stuff. However, having amazing tools like Kubeflow doesn't eliminate the need for an engineering mindset and a basic curiosity about what happens under the hood of the system. A DevOps knowledge bottleneck within a data science team can be fatal - once something is broken in the cluster, a team full of data scientists will be blocked and at a loss.
+Kubernetes has become omnipresent. Whether you're part of a development team looking to deploy highly available apps or part of a data science team looking to run machine learning workloads in a scalable way - Kubernetes is often the platform of choice. The ecosystem around Kubernetes has grown considerably, and last year I used a project called Kubeflow a lot. Kubeflow offers features such as distributed training or workflow orchestration, all running on top of Kubernetes. 
 
-## Taking a Glance Under the Hood
+When I peeked under the hood, one of the things I noticed on the cluster were Kubeflow's Custom Resource Definitions (CRDs) and their respective controllers. For example, when you create a recurring Kubeflow Pipeline job, you actually create a custom resource of type `ScheduledWorkflow` under API group/version `kubeflow.org/v1beta1` (you can see this easily with `kubectl get scheduledworkflow.v1beta1.kubeflow.org`). All changes made to this resource are observed by a controller, which is basically a control loop running on Kubernetes that reacts to these changes.
 
-One of things I noticed when checking out Kubeflow were Custom Resource Definitions (CRDs) and their respective controllers. For example, when you create a recurring Kubeflow Pipeline job, you actually create a custom resource of type `ScheduledWorkflow` in API group/version `kubeflow.org/v1beta1` (you can see this easily with `kubectl get scheduledworkflow.v1beta1.kubeflow.org`). All changes made to this resource are observed by a controller, which is basically a control loop running on Kubernetes that reacts to these changes.
+## Hello Operator
 
 The combination of a CRD with a controller is often called an operator. An example that is often used to explain operators is the native Kubernetes resource type `ReplicaSet` from the API group/version `apps/v1`. When you define a ReplicaSet in a yaml file like this
 ```yaml
@@ -33,9 +33,9 @@ you actually say that you want 3 pods (replicas) running the specified container
 Now that we know the purpose of a controller, let's talk about how we can create a CRD and controller, just like Kubeflow and other frameworks do to extend Kubernetes.
 
 ## Creating an Operator
-If you're familiar with golang, there are three ways to create an operator: `client-go`, `controller-runtime` and `kubebuilder`. Every one of these libraries/frameworks adds an additional layer of abstraction and relies on the library before. With `client-go` you start from scratch, `controller-runtime` will take care of some things for you and `kubebuilder` will automate as much as possible. 
+If you're familiar with golang, there are three ways to create an operator: [`client-go`](https://github.com/kubernetes/client-go), [`controller-runtime`](https://github.com/kubernetes-sigs/controller-runtime) and [`kubebuilder`](https://book.kubebuilder.io/introduction.html). Every one of these libraries/frameworks adds an additional layer of abstraction and relies on the library before. With `client-go` you start from scratch, `controller-runtime` will take care of some things for you and `kubebuilder` will automate as much as possible. 
 
-Does this mean that you always go with `kubebuilder`, since it automates so much? o answer this, it is helpful to understand how the development process differs using the three options.
+Does this mean that you always go with `kubebuilder`, since it automates so much? To answer this, it is helpful to understand how the development process differs using the three options.
 
 ## Baseline client-go
 Since both kubebuilder and controller-runtime use client-go under the hood, it makes sense to use development with pure client-go as our baseline. The following overview that I provide is by no means comprehensive, but it should give you a pretty concrete idea of the steps needed. There are two sources that explain the entire process very well, one being the [sample-controller](https://github.com/kubernetes/sample-controller/blob/master/docs/controller-client-go.md) and the other one being this [code generation walkthrough](https://www.openshift.com/blog/kubernetes-deep-dive-code-generation-customresources). 
@@ -49,7 +49,7 @@ Event handlers and workqueues are part of your custom controller implementation.
 Now that we have a high-level overview, let's walk through the sample-controller files.
 
 ### Define your CRD
-Remember the [Replicaset definition from the beginning](#taking-a-glance-under-the-hood)? Its first two fields `apiVersion` and `kind` specify the group/version and kind (=resource type). They are followed by a `metadata` section with fields such as `name`, `labels`, etc. These fields are shared by all k8s resource types. Finally, there is a `spec` section with fields specific to ReplicaSets only. 
+Remember the [Replicaset definition from the beginning](#hello-operator)? Its first two fields `apiVersion` and `kind` specify the group/version and kind (=resource type). They are followed by a `metadata` section with fields such as `name`, `labels`, etc. These fields are shared by all k8s resource types. Finally, there is a `spec` section with fields specific to ReplicaSets only. 
 
 When we define our CRD in golang, we follow the same structure:
 
@@ -316,12 +316,12 @@ In addition, controller-runtime offers easy ways to include admission and conver
 Since you no longer need to generate and create clientsets, informers and listers anymore, you might ask yourself if controller-runtime is still using any of these under the hood. The answer is yes, and if you're interested in the details, checkout my next post [Diving Into Controller-Runtime]({% link _posts/2021-03-12-diving-into-controller-runtime.md %}).
 
 ## Comparing to kubebuilder
-Kubebuilder is not a library per se like client-go or controller-runtime - it is more like a framework that will generate an entire project for you. The project comes with generated files (including deepcopy functions) and you only need to fill in your type definitions and reconciler logic. It has its own tags `// +kubebuilder...`, which you can leverage to e.g. configure RBAC permissions or webhooks. These tags will make kubebuilder generate the necessary (`kustomize`-able) `yaml` files for your deployment, and depending on which features you configured, you only need to make minor edits to them. Last but not least, kubebuilder also includes a Makefile that automates project deployment. Thus, the list of steps you need to carry out yourself is even further reduced to
+Kubebuilder leverages controller-runtime, but it is not a library per se like client-go or controller-runtime. It is more like a framework that will generate an entire project for you. The project comes with generated files (including deepcopy functions) and you only need to fill in your type definitions and reconciler logic. It has its own tags `// +kubebuilder...`, which you can leverage to e.g. configure RBAC permissions or webhooks. These tags will make kubebuilder generate the necessary (`kustomize`-able) `yaml` files for your deployment, and depending on which features you configured, you only need to make minor edits to them. Last but not least, kubebuilder also includes a Makefile that automates project deployment. Thus, the list of steps you need to carry out yourself is even further reduced to
 * define CRD types in golang
 * write reconciler logic
 * create and run your controller
   
 ## Summary
-After exploring the three options, I personally would choose kubebuilder for any smaller, self-contained, green-field operator development. It speeds up development, but I also think that the automatic code generation can be a bit daunting, especially if you are trying to troubleshoot why something does not work as expected. The more is automated, the less you are aware of what is automated for you. 
+After exploring the three options, I personally would choose kubebuilder for any smaller, self-contained, green-field operator development. It speeds up development, but the automatic code generation can be a bit daunting, especially if you are trying to troubleshoot why something does not work as expected. The more is automated, the less you are aware of what is automated for you. 
 
-If I had to add a controller to an existing legacy project (think of a giant server running multiple controllers), kubebuilder might not be my first choice. In that case, I would use controller-runtime and make my code integrate with the existing code structure. I also think that controller-runtime gives you the best out of two worlds: 1) it will save you development time like kubebuilder does 2) it will help you learn about the underlying concepts which will come in handy when you troubleshoot, similar to how development with pure client-go does.
+If I had to add a controller to an existing codebase (think of a giant server running multiple controllers), kubebuilder might not be my first choice. In that case, I would use controller-runtime and make my code integrate with the existing project. I also think that controller-runtime is a good mixture of both worlds: 1) it saves development time and 2) it helps you learn about the underlying concepts which will come in handy when you troubleshoot.
