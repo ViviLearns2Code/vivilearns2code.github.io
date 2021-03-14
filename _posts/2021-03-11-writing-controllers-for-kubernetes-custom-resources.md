@@ -4,11 +4,13 @@ title:  "Writing Controllers For Kubernetes Resources"
 date:   2021-03-11 13:12:30 +0200
 categories: k8s
 comments: true
+excerpt_separator: <!--more-->
 ---
 Kubernetes has become omnipresent. Whether you're part of a development team looking to deploy highly available apps or part of a data science team looking to run machine learning workloads in a scalable way - Kubernetes is often the platform of choice. The ecosystem around Kubernetes has grown considerably, and last year I used a project called Kubeflow a lot. Kubeflow offers features such as distributed training or workflow orchestration, all running on top of Kubernetes. 
 
 When I peeked under the hood, one of the things I noticed on the cluster were Kubeflow's Custom Resource Definitions (CRDs) and their respective controllers. For example, when you create a recurring Kubeflow Pipeline job, you actually create a custom resource of type `ScheduledWorkflow` under API group/version `kubeflow.org/v1beta1` (you can see this easily with `kubectl get scheduledworkflow.v1beta1.kubeflow.org`). All changes made to this resource are observed by a controller, which is basically a control loop running on Kubernetes that reacts to these changes.
 
+<!--more-->
 ## Hello Operator
 
 The combination of a CRD with a controller is often called an operator. An example that is often used to explain operators is the native Kubernetes resource type `ReplicaSet` from the API group/version `apps/v1`. When you define a ReplicaSet in a yaml file like this

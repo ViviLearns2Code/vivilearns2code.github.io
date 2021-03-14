@@ -4,17 +4,21 @@ title:  "Diving Into Controller Runtime"
 date:   2021-03-12 17:16:30 +0200
 categories: k8s
 comments: true
+excerpt_separator: <!--more-->
 ---
-When I first got started with controllers, it was difficult for me to understand how `client-go`, `controller-runtime` and `kubebuilder` were related to each other. I read up on [client-go concepts](https://github.com/kubernetes/sample-controller/blob/master/docs/controller-client-go.md), and knew that kubebuilder was based on controller-runtime and controller-runtime somehow based on client-go, but it wasn't clear to me where for example client-go's informers came into controller-runtime. This post will hopefully help other curious people like me to get a better picture of controller-runtime.
+In my previous post [Writing Controllers for Kubernetes Custom Resources]() I explored the development process using pure client-go and how it differs using controller-runtime and kubebuilder. In this post, I explore how controller-runtime makes use of client-go under the hood.
 
-We start our exploration of controller-runtime from our simplified custom code, so that it is easier to see what we need to write ourselves and where the library comes in. Basically, we need to do the following things ourselves:
-* define and register CRD types
-* implement `Reconciler` interface
-* generate deepcopy functions
-* create and start controller-runtime manager and controller
+<!--more-->
+As described in my previous post, to develop an operator with controller-runtime, we need to
+1. define CRD types
+2. generate deepcopy functions using `deepcopy-gen`
+3. write reconciler logic
+4. create and run the controller
+5. deployment-related configuration steps (out of cope for this post)
+Let's briefly walk through the steps using code from a project generated with kubebuilder. You can find the [full source code in this repo](https://github.com/ViviLearns2Code/myoperator/)
 
 ```golang
-/* snipped CRD golang type definitions in our custom code myoperator/api/v1 */
+/* snipped source code from https://github.com/ViviLearns2Code/myoperator/blob/main/api/v1/mykind_types.go */
 package v1
 import (
   "k8s.io/apimachinery/pkg/runtime/schema"
@@ -22,11 +26,8 @@ import (
 )
 
 var (
-  // GroupVersion is group version used to register these objects
   GroupVersion = schema.GroupVersion{Group: "mygroup.mydomain", Version: "v1"}
-  // SchemeBuilder is used to add go types to the GroupVersionKind scheme
   SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
-  // AddToScheme adds the types in this group-version to the given scheme.
   AddToScheme = SchemeBuilder.AddToScheme
 )
 
@@ -39,13 +40,13 @@ SchemeBuilder.Register(&MyKind{}, &MyKindList{})
 ```
 After defining the golang types for our CRD, we need to implement the `Reconciler` interface defined by the controller-runtime library
 ```golang
-/* source code snipped from controller-runtime's pkg/reconcile/reconcile.go */
+/* source code from https://github.com/kubernetes-sigs/controller-runtime/blob/master/pkg/reconcile/reconcile.go */
 type Reconciler interface {
   Reconcile(context.Context, Request) (Result, error)
 }
 ```
 ```golang
-/* snipped CRD controller implementation in our custom code myoperator/controllers */
+/* snipped source code from https://github.com/ViviLearns2Code/myoperator/blob/main/controllers/mykind_controller.go */
 package controllers
 import (
   "k8s.io/apimachinery/pkg/runtime"
@@ -63,33 +64,14 @@ func (r *MyKindReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
   return ctrl.Result{}, nil
 }
 ```
-If you do not use kubebuilder, you need to generate a file with deepcopy functions for your resource manually, to satisfy the `runtime.Object` interface. This can be done using [code-generator](https://github.com/kubernetes/code-generator). It offers four generators, but we only need to run one `deecopy-gen`. The other generators `client-gen`, `informer-gen`, `lister-gen` are not required because controller-runtime will handle the clientset, informer and lister objects for us. For more information on how to use `deepcopy-gen`, checkout this [article](https://www.openshift.com/blog/kubernetes-deep-dive-code-generation-customresources).
-```golang
-/* snipped, auto-generated source code from api/v1/zz_generated_deepcopy.go */
-package v1
+If you do not use kubebuilder, you need to generate a file with deepcopy functions for your resource manually using [`deepcopy-gen`](https://github.com/kubernetes/code-generator). The result is the file `api/v1/zz_generated_deepcopy.go`(https://github.com/ViviLearns2Code/myoperator/blob/main/api/v1/zz_generated.deepcopy.go).
 
-import (
-  "k8s.io/apimachinery/pkg/runtime"
-)
-
-func (in *MyKind) DeepCopyInto(out *MyKind) { /* snipped */ }
-func (in *MyKind) DeepCopy() *MyKind { /* snipped */ }
-func (in *MyKind) DeepCopyObject() runtime.Object { /* snipped */ }
-func (in *MyKindList) DeepCopyInto(out *MyKindList) { /* snipped */ }
-func (in *MyKindList) DeepCopy() *MyKindList { /* snipped */ }
-func (in *MyKindList) DeepCopyObject() runtime.Object { /* snipped */ }
-func (in *MyKindSpec) DeepCopyInto(out *MyKindSpec) { /* snipped */ }
-func (in *MyKindSpec) DeepCopy() *MyKindSpec { /* snipped */ }
-func (in *MyKindStatus) DeepCopyInto(out *MyKindStatus) { /* snipped */ }
-func (in *MyKindStatus) DeepCopy() *MyKindStatus { /* snipped */ }
-```
-
-Now that we have our custom logic ready, it is time to use controller-runtime.
+And now it is time to use controller-runtime.
 
 ## Starting with the Manager
 A manager is required to create and start up a controller. The manager needs a kubeconfig (controller-runtime offers `GetConfigOrDie()` to read it from the system) and can be provided with many options. Two examples are `Scheme`, which contains predefined k8s types and our CRD type, or the `Port` used to serve webhooks on. After creating and configuring the manager, we can add our CRD controller to it and start the manager.
 ```golang
-/* snipped source code from our application main.go */
+/* snipped source code from https://github.com/ViviLearns2Code/myoperator/blob/main/main.go */
 package main
 
 import (
@@ -127,7 +109,7 @@ func main() {
   // start manager
   mgr.Start(ctrl.SetupSignalHandler())
 ```
-This is just a high-level overview of what you would need to do. But what happens under the hood? How is the manager related to client-go concepts such as Informers?
+With this, all the steps to be done on your side are completed. But how does controller-runtime connect your code to client-go?
 
 ## A Manager's Components
 A manager is made up of several configurable components and two of its major components are `client` and `cache`. The former is responsible for read and write operations in general, the latter can be used to read data cached in indices to reduce load on the k8s apiserver. It is therefore not surprising that the client component reuses the cache component. 
