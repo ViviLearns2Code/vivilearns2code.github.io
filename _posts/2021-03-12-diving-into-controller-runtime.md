@@ -6,39 +6,17 @@ categories: k8s
 comments: true
 excerpt_separator: <!--more-->
 ---
-In my previous post [Writing Controllers for Kubernetes Custom Resources]() I explored the development process using pure client-go and how it differs using controller-runtime and kubebuilder. In this post, I explore how controller-runtime makes use of client-go under the hood.
+In my previous post [Writing Controllers for Kubernetes Custom Resources]() I explored the development process using pure client-go and how it differs from using controller-runtime (and kubebuilder). In this post, I explore how controller-runtime (v0.7.0) uses client-go under the hood.
 
 <!--more-->
-As described in my previous post, to develop an operator with controller-runtime, we need to
+The starting point will be [a project generated with kubebuilder](https://github.com/ViviLearns2Code/myoperator/). As described in my previous post, to develop an operator with controller-runtime, we need to
 1. define CRD types
-2. generate deepcopy functions using `deepcopy-gen`
+2. generate deepcopy functions
 3. write reconciler logic
 4. create and run the controller
-5. deployment-related configuration steps (out of cope for this post)
-Let's briefly walk through the steps using code from a project generated with kubebuilder. You can find the [full source code in this repo](https://github.com/ViviLearns2Code/myoperator/)
-
-```golang
-/* snipped source code from https://github.com/ViviLearns2Code/myoperator/blob/main/api/v1/mykind_types.go */
-package v1
-import (
-  "k8s.io/apimachinery/pkg/runtime/schema"
-  "sigs.k8s.io/controller-runtime/pkg/scheme"
-)
-
-var (
-  GroupVersion = schema.GroupVersion{Group: "mygroup.mydomain", Version: "v1"}
-  SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
-  AddToScheme = SchemeBuilder.AddToScheme
-)
-
-type MyKindSpec struct { /* ... */ }
-type MyKindStatus struct { /* ... */ }
-type MyKind struct { /* ... */ }
-type MyKindList struct { /* ... */ }
-
-SchemeBuilder.Register(&MyKind{}, &MyKindList{})
-```
-After defining the golang types for our CRD, we need to implement the `Reconciler` interface defined by the controller-runtime library
+5. perform deployment-related steps (out of cope for this post)
+   
+I will skip the first two steps as they are similar to development with pure client-go and start with the reconciler logic. It is mandatory for us to implement the `Reconciler` interface defined by controller-runtime:
 ```golang
 /* source code from https://github.com/kubernetes-sigs/controller-runtime/blob/master/pkg/reconcile/reconcile.go */
 type Reconciler interface {
@@ -60,16 +38,14 @@ type MyKindReconciler struct {
 }
 
 func (r *MyKindReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-  /* snipped business logic */
+  /* snipped reconciler logic */
   return ctrl.Result{}, nil
 }
 ```
-If you do not use kubebuilder, you need to generate a file with deepcopy functions for your resource manually using [`deepcopy-gen`](https://github.com/kubernetes/code-generator). The result is the file `api/v1/zz_generated_deepcopy.go`(https://github.com/ViviLearns2Code/myoperator/blob/main/api/v1/zz_generated.deepcopy.go).
+Now that we have our CRD definition and controller logic ready, all that is left for us is to create and run the controller. And that's where a new layer of abstraction called the `manager` comes in.
 
-And now it is time to use controller-runtime.
-
-## Starting with the Manager
-A manager is required to create and start up a controller. The manager needs a kubeconfig (controller-runtime offers `GetConfigOrDie()` to read it from the system) and can be provided with many options. Two examples are `Scheme`, which contains predefined k8s types and our CRD type, or the `Port` used to serve webhooks on. After creating and configuring the manager, we can add our CRD controller to it and start the manager.
+## The Manager
+A manager is required to create and start up a controller (there can be multiple controllers associated with a manager). The manager needs a kubeconfig and can be provided with many configuration options. After creating and configuring the manager, we can add our controller to it. Starting the manager also starts all controllers (and other runnables like webhook servers) assigned to it.
 ```golang
 /* snipped source code from https://github.com/ViviLearns2Code/myoperator/blob/main/main.go */
 package main
@@ -79,8 +55,8 @@ import (
   clientgoscheme "k8s.io/client-go/kubernetes/scheme"
   ctrl "sigs.k8s.io/controller-runtime"
 
-  mygroupv1 "myoperator/api/v1" //our CRD schema definitions
-  "myoperator/controllers" //our CRD controller implementation
+  mygroupv1 "myoperator/api/v1"
+  "myoperator/controllers"
 )
 
 var (
@@ -109,31 +85,32 @@ func main() {
   // start manager
   mgr.Start(ctrl.SetupSignalHandler())
 ```
-With this, all the steps to be done on your side are completed. But how does controller-runtime connect your code to client-go?
+Okay, so we've got a running controller now. But how does controller-runtime connect your code to client-go? For example, where did the informers go?
 
-## A Manager's Components
+## The Manager's Components
 A manager is made up of several configurable components and two of its major components are `client` and `cache`. The former is responsible for read and write operations in general, the latter can be used to read data cached in indices to reduce load on the k8s apiserver. It is therefore not surprising that the client component reuses the cache component. 
 
 ```golang
+/* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/manager/internal.go */
 import (
   "sigs.k8s.io/controller-runtime/pkg/cache"
   "sigs.k8s.io/controller-runtime/pkg/client"
 )
 type controllerManager struct {
-  /* snipped source code from pkg/manager/internal.go */
   cache cache.Cache
   client client.Client
-  // ...
+  /* ... */
 }
 ```
 To understand how these two are linked to client-go, let us take a look at the cache and client constructors, `NewClientBuilder` and `cache.New`.
 
 ```golang
+/* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/manager/manager.go */
 import (
   "sigs.k8s.io/controller-runtime/pkg/cache"
 )
 func setOptionsDefaults(options Options) Options {
-  /* snipped source code from controller-runtime, pkg/manager/manager.go */
+  /* ... */ 
   if options.ClientBuilder == nil {
     options.ClientBuilder = NewClientBuilder()
   }
@@ -147,13 +124,13 @@ func setOptionsDefaults(options Options) Options {
 ## The Cache
 The struct returned by `cache.New` implements the composite `Cache` interface
 ```golang
+/* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/cache/cache.go */
+
 type Cache interface {
-  /* snipped source code from pkg/cache/cache.go */
   client.Reader
   Informers
 }
 type Informers interface {
-  /* snipped source code from pkg/cache/cache.go */
   GetInformer(ctx context.Context, obj client.Object) (Informer, error)
   GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind) (Informer, error)
   Start(ctx context.Context) error
@@ -162,13 +139,13 @@ type Informers interface {
 }
 ```
 ```golang
+/* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/client/interfaces.go */
+
 type Reader interface {
-  /* snipped source code from pkg/client/interfaces.go */
   Get(ctx context.Context, key ObjectKey, obj Object) error
   List(ctx context.Context, list ObjectList, opts ...ListOption) error
 }
 type FieldIndexer interface {
-  /* snipped source code from pkg/client/interfaces.go */
   IndexField(ctx context.Context, obj Object, field string, extractValue IndexerFunc) error
 }
 ```
@@ -189,8 +166,9 @@ The functions `GetInformer` and `GetInformerForKind` return a struct implementin
 ## The Client
 `NewClientBuilder` returns a builder that builds a client satisfying
 ```golang
+/* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/client/interfaces.go */
+
 type Client interface {
-  /* snipped source code from pkg/client/interfaces.go */
   Reader
   Writer
   StatusClient
@@ -198,12 +176,10 @@ type Client interface {
   RESTMapper() meta.RESTMapper
 }
 type Reader interface {
-  /* snipped source code from pkg/client/interfaces.go */
   Get(ctx context.Context, key ObjectKey, obj Object) error
   List(ctx context.Context, list ObjectList, opts ...ListOption) error
 }
 type Writer interface {
-  /* snipped source code from pkg/client/interfaces.go */
   Create(ctx context.Context, obj Object, opts ...CreateOption) error
   Delete(ctx context.Context, obj Object, opts ...DeleteOption) error
   Update(ctx context.Context, obj Object, opts ...UpdateOption) error
@@ -211,7 +187,6 @@ type Writer interface {
   DeleteAllOf(ctx context.Context, obj Object, opts ...DeleteAllOfOption) error
 }
 type StatusClient interface {
- /* snipped source code from pkg/client/interfaces.go */
   Status() StatusWriter
 }
 ```
@@ -220,12 +195,13 @@ type StatusClient interface {
 The special thing about the returned client is that it will access the k8s apiserver for write operations and the cache for read operations. If the user wants to bypass the cache for read operations, they can configure the builder by setting the `ClientDisableCacheFor` option of the manager. 
 
 ```golang
+/* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/manager/client_builder.go */
+
 import (
   "sigs.k8s.io/controller-runtime/pkg/cache"
   "sigs.k8s.io/controller-runtime/pkg/client"
 )
 func (n *newClientBuilder) Build(cache cache.Cache, config *rest.Config, options client.Options) (client.Client, error) {
-  /* source code from pkg/manager/client_builder.go */
   c, err := client.New(config, options)
   if err != nil {
     return nil, err
@@ -239,11 +215,10 @@ func (n *newClientBuilder) Build(cache cache.Cache, config *rest.Config, options
 }
 ```
 ```golang
+/* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/client/split.go */
+
 func NewDelegatingClient(in NewDelegatingClientInput) (Client, error) {
-  /* snipped source code from pkg/client/split.go */
-  uncachedGVKs := map[schema.GroupVersionKind]struct{}{}
-  /* snipped: collect uncached GVKs associated with in.UncachedObjects */
-  
+  /* ... */  
   return &delegatingClient{
     scheme: in.Client.Scheme(),
     mapper: in.Client.RESTMapper(),
@@ -264,8 +239,9 @@ All operations that are directly sent to the k8s apiserver rely on client-go's `
 ## And finally, the Controller
 When we create the controller and add it to the manager ([remember?](#Starting-with-the-Manager)), we link it to our CRD type and `Reconciler` implementation. The resulting controller also contains a workqueue constructor which leverages client-go's `workqueue.RateLimitingInterface`.
 ```golang
+/* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/controller/controller.go */
+
 func New(name string, mgr manager.Manager, options Options) (Controller, error) {
-  /* snipped source code from pkg/controller/controller.go */
   c, err := NewUnmanaged(name, mgr, options)
   if err != nil {
     return nil, err
@@ -273,7 +249,7 @@ func New(name string, mgr manager.Manager, options Options) (Controller, error) 
   return c, mgr.Add(c)
 }
 func NewUnmanaged(name string, mgr manager.Manager, options Options) (Controller, error) {
-  /* snipped source code from pkg/controller/controller.go */
+
   return &controller.Controller{
       Do: options.Reconciler,
       MakeQueue: func() workqueue.RateLimitingInterface {
@@ -282,16 +258,18 @@ func NewUnmanaged(name string, mgr manager.Manager, options Options) (Controller
     }, nil
 }
 ```
-When the controller is added to the manager, the manager's cache is injected into the controller. When the manager is started, the controller is started as well. This will create and run informers for our resources, and the informers are managed by the injected manager cache. The workqueue is created and the controller invokes the informer's `AddEventHandler` function to register its workqueue to receive resource updates. It then starts worker goroutines, each of which will process a workqueue item by calling our custom reconciler logic inside `processNextWorkItem`.
+[Remember when we added the controller to the manager](#the-manager)? It was just a single line of code `ctrl.NewControllerManagedBy(mgr).For(&mygroupv1.MyKind{}).Complete(r)`, but a lot happens behind the scenes. 
+When the controller is added to the manager, the manager's cache is injected into the controller. Why is that important? When the manager is started, the control loop is started as well. This will create and run informers for our resources, and the informers are managed by the injected manager cache. The workqueue is created and the controller invokes the informer's `AddEventHandler` function to register its workqueue to receive resource updates. It then starts worker goroutines), each of which will process a workqueue item by calling our custom reconciler logic inside `processNextWorkItem`.
 ```golang
+/* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/internal/controller/controller.go */
+
 func (c *Controller) Start(ctx context.Context) error {
-  /* snipped source code from pkg/internal/controller/controller.go */
   // create workqueue
   c.Queue = c.MakeQueue()
   defer c.Queue.ShutDown()
 
   err := func() error {
-    // runs informers, registers workqueue for resource updates
+    // run informers, registers workqueue for resource updates
     for _, watch := range c.startWatches {
       c.Log.Info("Starting EventSource", "source", watch.src)
       if err := watch.src.Start(ctx, watch.handler, c.Queue, watch.predicates...); err != nil {

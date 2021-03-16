@@ -35,7 +35,7 @@ you actually say that you want 3 pods (replicas) running the specified container
 Now that we know the purpose of a controller, let's talk about how we can create a CRD and controller, just like Kubeflow and other frameworks do to extend Kubernetes.
 
 ## Creating an Operator
-If you're familiar with golang, there are three ways to create an operator: [`client-go`](https://github.com/kubernetes/client-go), [`controller-runtime`](https://github.com/kubernetes-sigs/controller-runtime) and [`kubebuilder`](https://book.kubebuilder.io/introduction.html). Every one of these libraries/frameworks adds an additional layer of abstraction and relies on the library before. With `client-go` you start from scratch, `controller-runtime` will take care of some things for you and `kubebuilder` will automate as much as possible. 
+If you're familiar with golang, there are three ways to create an operator: [`client-go`](https://github.com/kubernetes/client-go), [`controller-runtime`](https://github.com/kubernetes-sigs/controller-runtime) and [`kubebuilder`](https://book.kubebuilder.io/introduction.html). Every one of these libraries/frameworks adds an additional layer of abstraction and relies on the library before it. With `client-go` you start from scratch, `controller-runtime` removes some of the manual overhead and `kubebuilder` will automate as much as possible. 
 
 Does this mean that you always go with `kubebuilder`, since it automates so much? To answer this, it is helpful to understand how the development process differs using the three options.
 
@@ -300,18 +300,18 @@ Using pure client-go, you need to
 * define CRD types in golang
 * generate deepcopy functions
 * generate clientset, informer, lister
-* create informer, lister, clientset for your controller to use
 * write control loop
 * write reconciler logic
+* create informer, lister, clientset for your controller to use
 * create and run your controller
-* take care of deployment-related steps
+* perform deployment-related steps
   
 You can skip some of the above steps by using controller-runtime. The above list is reduced to
 * define CRD types in golang
 * generate deepcopy functions
 * write reconciler logic
 * create and run your controller
-* take care of deployment-related steps
+* perform of deployment-related steps
 
 In addition, controller-runtime offers easy ways to include admission and conversion webhooks and possibly other things which I haven't explored yet.
 
