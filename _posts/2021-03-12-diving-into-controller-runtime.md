@@ -24,7 +24,6 @@ type Reconciler interface {
 }
 ```
 ```golang
-/* snipped source code from https://github.com/ViviLearns2Code/myoperator/blob/main/controllers/mykind_controller.go */
 package controllers
 import (
   "k8s.io/apimachinery/pkg/runtime"
@@ -47,7 +46,6 @@ After this, we have to create and run the controller. And that's where a new lay
 ## The Manager
 A manager is required to create and start up a controller (there can be multiple controllers associated with a manager). Starting the manager also starts all controllers (and other runnables like webhook servers) assigned to it.
 ```golang
-/* snipped source code from https://github.com/ViviLearns2Code/myoperator/blob/main/main.go */
 package main
 
 import (
