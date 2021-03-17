@@ -13,7 +13,7 @@ Sometimes, I would take a peek into the cluster to see what was going on, and on
 <!--more-->
 ## Hello Operator
 
-The combination of a CRD with a controller is often called an operator. An example that is often used to explain operators is the native Kubernetes resource type `ReplicaSet` from the API group/version `apps/v1`. When you define a ReplicaSet in a yaml file like this
+The combination of a CRD with a controller is often called an operator. An example that is often used to explain operators is the native Kubernetes resource type `ReplicaSet` under the API group/version `apps/v1`. When you define a ReplicaSet in a yaml file like this
 ```yaml
 apiVersion: apps/v1
 kind: ReplicaSet
@@ -143,13 +143,13 @@ func (in *FooStatus) DeepCopy() *FooStatus  { /* ... */ }
 ```
 You probably also noticed in the files above that there are other tags unrelated to deepcopy, like `// +groupName=samplecontroller.k8s.io` or `// +genclient`. These are used by `client-gen` to generate the clientset for your resource type. [You can find the generated folder contents here](https://github.com/kubernetes/sample-controller/tree/master/pkg/generated/clientset/versioned) 
 
-In addition to `deepcopy-gen` and `client-gen`, you also need to run `informer-gen` and `lister-gen` to generate informer and lister for your resource type. In the sample-controller project, these code generation steps were automated in [the script `hack/update-codegen.sh`](https://github.com/kubernetes/sample-controller/blob/master/hack/update-codegen.sh) so you don't need to manually run every generator in the command line. All code generators are part of the [code-generator](https://github.com/kubernetes/code-generator) project.
+In addition to `deepcopy-gen` and `client-gen`, you also need to run `informer-gen` and `lister-gen` to generate informer and lister for your resource type. In the sample-controller project, these code generation steps were automated in [`hack/update-codegen.sh`](https://github.com/kubernetes/sample-controller/blob/master/hack/update-codegen.sh) so you don't need to manually run every generator in the command line. All code generators are part of the [code-generator](https://github.com/kubernetes/code-generator) project.
 
 Lastly, you need to register your golang types: 
 * [pkg/apis/samplecontroller/v1alpha1/register.go](https://github.com/kubernetes/sample-controller/blob/master/pkg/apis/samplecontroller/v1alpha1/register.go)
 * [pkg/apis/samplecontroller/register.go](https://github.com/kubernetes/sample-controller/blob/master/pkg/apis/samplecontroller/register.go)
 
-By doing so, we link the golang type `Foo` to the Kubernetes ḱind `Foo` in group/version `samplecontroller.k8s.io/v1alpha`. You can read more about it [here](https://book.kubebuilder.io/cronjob-tutorial/gvks.html#err-but-whats-that-scheme-thing).
+By doing so, we link the golang type `Foo` to the Kubernetes kind `Foo` under group/version `samplecontroller.k8s.io/v1alpha`. You can read more about it [here](https://book.kubebuilder.io/cronjob-tutorial/gvks.html#err-but-whats-that-scheme-thing).
 
 ### Define your controller logic 
 If we look at [`controller.go`](https://github.com/kubernetes/sample-controller/blob/master/controller.go), we see that it interacts with 2 resource types: the native k8s Deployment and the custom Foo. Therefore, clientset, informer and lister for both resource types are required by the controller.
