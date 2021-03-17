@@ -106,8 +106,8 @@ type controllerManager struct {
   /* ... */
 }
 ```
-
-## The Cache
+You can skip the next two sections and proceed with [And finally, the Controller](#and-finally-the-controller) in case you are only interested in the general idea and not the technical details (= code snippets I found helpful when browsing through the controller-runtime code).
+### The Cache
 A cache is a struct that implements the composite `Cache` interface
 ```golang
 /* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/cache/cache.go */
@@ -149,7 +149,7 @@ The definition of that struct is spread across several files (`pkg/cache/informe
 
 (Note: The functions `GetInformer` and `GetInformerForKind` return an informer that offers functions like `AddEventHandler`, `AddEventHandlerWithResyncPeriod`, `AddIndexers` and `HasSynced`. In case you remember, `AddEventHandler` was the function we used in pure client-go to register our workqueue for resource updates. With controller-runtime, this is taken care of for us.)
 
-## The Client
+### The Client
 A client is a struct that implements the composite `Client` interface:
 ```golang
 /* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/client/interfaces.go */
@@ -221,7 +221,7 @@ func NewDelegatingClient(in NewDelegatingClientInput) (Client, error) {
 ```
 
 ## And finally, the Controller
-It's time to put everything together. [Remember the magical lines for controller creation](#the-manager)? Let's go through them:
+It's time to put everything together. [Remember the magical lines for controller creation?](#the-manager)
 
 ```golang
 func main() {
@@ -232,6 +232,7 @@ func main() {
     Scheme: mgr.GetScheme(),
   }
   /* ... */
+}
 ```
 Here we reference the manager's client so that we can use it for read/write operations in our reconciler logic.
 
@@ -268,7 +269,7 @@ func NewUnmanaged(name string, mgr manager.Manager, options Options) (Controller
     }, nil
 }
 ```
-When the controller is added to the manager, the manager's cache is injected into the controller. The controller needs the manager cache, because of the resource updates provided by the informers in the manager cache.
+When the controller is added to the manager, the manager's cache is injected into the controller. The controller needs the manager's cache because of the resource updates provided by the informers in it.
 
 When the manager is started, the control loop is started as well. This will create and run informers for our resources, and the controller workqueue is registered to the informers. Finally, worker goroutines are launched, each of which will process a workqueue item by calling our custom reconciler logic inside `processNextWorkItem`.
 ```golang
@@ -282,7 +283,6 @@ func (c *Controller) Start(ctx context.Context) error {
   err := func() error {
     // run informers, registers workqueue for resource updates
     for _, watch := range c.startWatches {
-      c.Log.Info("Starting EventSource", "source", watch.src)
       if err := watch.src.Start(ctx, watch.handler, c.Queue, watch.predicates...); err != nil {
         return err
       }
