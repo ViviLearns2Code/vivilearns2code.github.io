@@ -94,7 +94,7 @@ It's just a few lines of code, but there's a lot of magic happening behind the s
 The first question is answered by the manager's `cache` component, the second by its `client` component. Let's look at them next.
 
 ## The Manager's Components
-A manager's `client` component is responsible for read and write operations in general. The `cache` actually has two functions: 1) it manages informers and therefore keeps our controller in the loop regarding resource updates and 2) it caches data in a local index to reduce load on the k8s apiserver. The client component reuses the cache component for some cached read operations.
+A manager's `client` component is responsible for read and write operations in general. The `cache` actually has two functions: 1) it manages informers and therefore keeps our controller in the loop regarding resource updates and 2) it caches data in a local index to reduce load on the k8s apiserver. The client component reuses the cache component for cached read operations.
 
 ```golang
 /* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/manager/internal.go */
@@ -137,7 +137,7 @@ type FieldIndexer interface {
   IndexField(ctx context.Context, obj Object, field string, extractValue IndexerFunc) error
 }
 ```
-The definition of that struct is spread across several files (`pkg/cache/informer_cache.go`, `pkg/cache/internal/deleg_map.go`, `pkg/cache/internal/informers_map.go`, `pkg/cache/internal/cache_reader.go`). If you strip away the details like support for (un)structured types or multiple resources, the struct is more or less a map that maps from objects or GVKs to client-go's `SharedIndexInformer`. The following table shows how client-go's package `cache` is used to implement controller-runtime's manager cache:
+The definition of that struct is spread across several files (`pkg/cache/informer_cache.go`, `pkg/cache/internal/deleg_map.go`, `pkg/cache/internal/informers_map.go`, `pkg/cache/internal/cache_reader.go`). If we strip away the details like support for (un)structured types or multiple resources, the struct is more or less a map that maps from objects or GVKs to client-go's `SharedIndexInformer`. The following table shows how client-go's package `cache` is used to implement controller-runtime's manager cache:
 
 | Function | Description | client-go objects (pkg cache) |
 | ------------- |:-------------|:-----|
@@ -149,7 +149,7 @@ The definition of that struct is spread across several files (`pkg/cache/informe
 |`WaitForCacheSync`| waits for all caches to sync | `WaitForCacheSync` |
 |`IndexField` | adds field indices over the cache | `SharedIndexInformer.AddIndexers` |
 
-(Note: The functions `GetInformer` and `GetInformerForKind` return an informer that offers functions like `AddEventHandler`, `AddEventHandlerWithResyncPeriod`, `AddIndexers` and `HasSynced`. In case you remember, `AddEventHandler` was the function we used in pure client-go to register handlers that enqueue updates to the controller's workqueue. With controller-runtime, this is taken care of for you.)
+(Note: The functions `GetInformer` and `GetInformerForKind` return an informer that offers functions like `AddEventHandler`, `AddEventHandlerWithResyncPeriod`, `AddIndexers` and `HasSynced`. In case you remember, `AddEventHandler` was the function we used in pure client-go to register our workqueue for resource updates. With controller-runtime, this is taken care of for us.)
 
 ## The Client
 A client is a struct that implements the composite `Client` interface:
@@ -180,7 +180,7 @@ type StatusClient interface {
 ```
 (Note: `StatusClient` is in charge of updating the status subresource)
 
-The special thing about the manager's client is that it will access the k8s apiserver for write operations and the cache for read operations. The client is what you will use in your reconciler logic to handle resources. Instead of using listers and clientsets separately, you now have a unified interface. If the you want to bypass the cache for read operations, you can use the `ClientDisableCacheFor` option of the manager. 
+The special thing about the manager's client is that it will access the k8s apiserver for write operations and the cache for read operations. The client is what we use in our reconciler logic to handle resources. Instead of using listers and clientsets separately, we now have a unified interface. If the we want to bypass the cache for read operations, we can use the `ClientDisableCacheFor` option of the manager. 
 
 ```golang
 /* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/manager/client_builder.go */
