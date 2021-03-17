@@ -137,7 +137,7 @@ type FieldIndexer interface {
   IndexField(ctx context.Context, obj Object, field string, extractValue IndexerFunc) error
 }
 ```
-The definition of that struct is spread across several files (`pkg/cache/informer_cache.go`, `pkg/cache/internal/deleg_map.go`, `pkg/cache/internal/informers_map.go`, `pkg/cache/internal/cache_reader.go`). If you strip away the details like support for (un)structured types or multiple resources, the struct is more or less a map that maps from objects or GVKs to client-go's `SharedIndexInformer`. The following table how client-go's package `cache` is used to implement controller-runtime's manager cache:
+The definition of that struct is spread across several files (`pkg/cache/informer_cache.go`, `pkg/cache/internal/deleg_map.go`, `pkg/cache/internal/informers_map.go`, `pkg/cache/internal/cache_reader.go`). If you strip away the details like support for (un)structured types or multiple resources, the struct is more or less a map that maps from objects or GVKs to client-go's `SharedIndexInformer`. The following table shows how client-go's package `cache` is used to implement controller-runtime's manager cache:
 
 | Function | Description | client-go objects (pkg cache) |
 | ------------- |:-------------|:-----|
