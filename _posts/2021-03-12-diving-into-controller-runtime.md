@@ -6,19 +6,19 @@ categories: k8s
 comments: true
 excerpt_separator: <!--more-->
 ---
-In my previous post [Writing Controllers for Kubernetes Custom Resources]() I explored the development process using pure client-go and how it differs from using controller-runtime (and kubebuilder). In this post, I explore how controller-runtime (v0.7.0) uses client-go under the hood.
+In my previous post [Writing Controllers for Kubernetes Custom Resources]() I explored the development process using pure client-go and how it differs from using controller-runtime (and kubebuilder). In this post, I explore how controller-runtime (v0.7.0) uses client-go's informer mechanism.
 
 <!--more-->
-The starting point will be [a project generated with kubebuilder](https://github.com/ViviLearns2Code/myoperator/). As described in my previous post, to develop an operator with controller-runtime, we need to
+As described in my previous post, to develop an operator with controller-runtime, we need to
 1. define CRD types
 2. generate deepcopy functions
 3. write reconciler logic
 4. create and run the controller
 5. perform deployment-related steps (out of cope for this post)
    
-I will skip the first two steps as they are similar to development with pure client-go and start with the reconciler logic. It is mandatory for us to implement the `Reconciler` interface defined by controller-runtime:
+I will skip the first two steps as they are similar to development with pure client-go and start with the reconciler logic. Here, controller-runtime needs us to implement the `Reconciler` interface:
 ```golang
-/* source code from https://github.com/kubernetes-sigs/controller-runtime/blob/master/pkg/reconcile/reconcile.go */
+/* source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/reconcile/reconcile.go */
 type Reconciler interface {
   Reconcile(context.Context, Request) (Result, error)
 }
@@ -42,7 +42,7 @@ func (r *MyKindReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
   return ctrl.Result{}, nil
 }
 ```
-Now that we have our CRD definition and controller logic ready, all that is left for us is to create and run the controller. And that's where a new layer of abstraction called the `manager` comes in.
+After this, we have to create and run the controller. And that's where a new layer of abstraction called the `manager` comes in.
 
 ## The Manager
 A manager is required to create and start up a controller (there can be multiple controllers associated with a manager). The manager needs a kubeconfig and can be provided with many configuration options. After creating and configuring the manager, we can add our controller to it. Starting the manager also starts all controllers (and other runnables like webhook servers) assigned to it.
@@ -74,6 +74,7 @@ func main() {
     Scheme:             scheme,
     Port:               9443,
   })
+
   // create and add controller
   r := &controllers.MyKindReconciler{
     Client: mgr.GetClient(),
@@ -82,13 +83,18 @@ func main() {
   _ = ctrl.NewControllerManagedBy(mgr).
     For(&mygroupv1.MyKind{}).
     Complete(r)
+
   // start manager
   mgr.Start(ctrl.SetupSignalHandler())
 ```
-Okay, so we've got a running controller now. But how does controller-runtime connect your code to client-go? For example, where did the informers go?
+There's a lot of magic happening behind these scenes. For example, we might ask ourselves:
+* with pure client-go, we generated informers to keep us updated about resources - where are they now?
+* with pure client-go, we read from an internal cache (lister) and write to the k8s apiserver (clientset) in our reconciler logic - how does that work now?
+
+The former question is answered by the manager's `cache` component, the latter by its `client` component. Let's look at them next.
 
 ## The Manager's Components
-A manager is made up of several configurable components and two of its major components are `client` and `cache`. The former is responsible for read and write operations in general, the latter can be used to read data cached in indices to reduce load on the k8s apiserver. It is therefore not surprising that the client component reuses the cache component. 
+A manager's `client` component is responsible for read and write operations in general, while the `cache` can be used to read data from a local index to reduce load on the k8s apiserver. The client component reuses the cache component for some of its read operations.
 
 ```golang
 /* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/manager/internal.go */
@@ -102,27 +108,9 @@ type controllerManager struct {
   /* ... */
 }
 ```
-To understand how these two are linked to client-go, let us take a look at the cache and client constructors, `NewClientBuilder` and `cache.New`.
-
-```golang
-/* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/manager/manager.go */
-import (
-  "sigs.k8s.io/controller-runtime/pkg/cache"
-)
-func setOptionsDefaults(options Options) Options {
-  /* ... */ 
-  if options.ClientBuilder == nil {
-    options.ClientBuilder = NewClientBuilder()
-  }
-  if options.NewCache == nil {
-    options.NewCache = cache.New
-  }
-  return options
-}
-```
 
 ## The Cache
-The struct returned by `cache.New` implements the composite `Cache` interface
+A cache is a struct that implements the composite `Cache` interface
 ```golang
 /* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/cache/cache.go */
 
@@ -149,22 +137,22 @@ type FieldIndexer interface {
   IndexField(ctx context.Context, obj Object, field string, extractValue IndexerFunc) error
 }
 ```
-The definition of that struct is spread across several files (`pkg/cache/informer_cache.go`, `pkg/cache/internal/deleg_map.go`, `pkg/cache/internal/informers_map.go`, `pkg/cache/internal/cache_reader.go`). If you strip away the details like support for (un)structured types or multiple resources, the struct is more or less a map that maps from objects or GVKs to client-go `SharedIndexInformer` and `Indexer` objects. The following table shows how the cache uses client-go.
+The definition of that struct is spread across several files (`pkg/cache/informer_cache.go`, `pkg/cache/internal/deleg_map.go`, `pkg/cache/internal/informers_map.go`, `pkg/cache/internal/cache_reader.go`). If you strip away the details like support for (un)structured types or multiple resources, the struct is more or less a map that maps from objects or GVKs to client-go's `SharedIndexInformer`. The following table how client-go's package `cache` is used to implement controller-runtime's manager cache:
 
-| Functions | Description | Usage of client-go|
+| Function | Description | client-go objects (pkg cache) |
 | ------------- |:-------------|:-----|
-|`Get` | cached read access | reads from the informer's index that is obtained with `cache.SharedIndexInformer.GetIndexer()` |
+|`Get` | cached read access | reads from the informer's index `SharedIndexInformer.GetIndexer()` |
 |`List` | cached read access | same as above |
-|`GetInformer` | retrieves informer for a given runtime object (creates one if doesn't exist) |returns  `cache.SharedIndexInformer` |
+|`GetInformer` | retrieves informer for a given runtime object (creates one if doesn't exist) |returns  `SharedIndexInformer` |
 |`GetInformerForKind`| same as above, but for GKV | same as above |
-|`Start`| runs all informers, meaning it will list & watch the k8s apiserver for resource updates | `cache.ListWatch` |
-|`WaitForCacheSync`| waits for all caches to sync | `cache.WaitForCacheSync` |
-|`IndexField` | adds field indices over the cache | `cache.SharedIndexInformer.AddIndexers` |
+|`Start`| runs all informers, meaning it will list & watch the k8s apiserver for resource updates | `ListWatch` |
+|`WaitForCacheSync`| waits for all caches to sync | `WaitForCacheSync` |
+|`IndexField` | adds field indices over the cache | `SharedIndexInformer.AddIndexers` |
 
-The functions `GetInformer` and `GetInformerForKind` return a struct implementing the interface `Informer`, which offers the functions `AddEventHandler`, `AddEventHandlerWithResyncPeriod`, `AddIndexers` , `HasSynced`. The implementation relies on the eponymous functions offered by client-go's `cache.SharedIndexInformer` and can for example be used to register a controller's workqueue to receive updates from the informer.
+(Note: The functions `GetInformer` and `GetInformerForKind` return an informer that offers functions like `AddEventHandler`, `AddEventHandlerWithResyncPeriod`, `AddIndexers` and `HasSynced`. In case you remember, `AddEventHandler` was the function we used in pure client-go to register handlers that enqueue updates to the controller's workqueue. With controller-runtime, this is taken care of for you.)
 
 ## The Client
-`NewClientBuilder` returns a builder that builds a client satisfying
+A client is a struct that implements the composite `Client` interface:
 ```golang
 /* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/client/interfaces.go */
 
@@ -192,7 +180,7 @@ type StatusClient interface {
 ```
 (Note: `StatusClient` is in charge of updating the status subresource)
 
-The special thing about the returned client is that it will access the k8s apiserver for write operations and the cache for read operations. If the user wants to bypass the cache for read operations, they can configure the builder by setting the `ClientDisableCacheFor` option of the manager. 
+The special thing about the manager's client is that it will access the k8s apiserver for write operations and the cache for read operations. The client is what you will use in your reconciler logic to handle resources. Instead of using listers and clientsets separately, you now have a unified interface. If the you want to bypass the cache for read operations, you can use the `ClientDisableCacheFor` option of the manager. 
 
 ```golang
 /* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/manager/client_builder.go */
@@ -234,10 +222,34 @@ func NewDelegatingClient(in NewDelegatingClientInput) (Client, error) {
 }
 ```
 
-All operations that are directly sent to the k8s apiserver rely on client-go's `rest` package under the hood, and all read operations using the cache rely on `SharedIndexInformer`.
-
 ## And finally, the Controller
-When we create the controller and add it to the manager ([remember?](#Starting-with-the-Manager)), we link it to our CRD type and `Reconciler` implementation. The resulting controller also contains a workqueue constructor which leverages client-go's `workqueue.RateLimitingInterface`.
+It's time to put everything together. [Remember the magical lines for controller creation](#the-manager)? Let's go through them:
+
+```golang
+func main() {
+  /* ... */
+  // create and add controller
+  r := &controllers.MyKindReconciler{
+    Client: mgr.GetClient(),
+    Scheme: mgr.GetScheme(),
+  }
+  /* ... */
+```
+Here we reference the manager's client so that we can use it for read/write operations in our reconciler logic.
+
+```golang
+func main(){
+  /* ... */
+  _ = ctrl.NewControllerManagedBy(mgr).
+    For(&mygroupv1.MyKind{}).
+    Complete(r)
+
+  // start manager
+  mgr.Start(ctrl.SetupSignalHandler())
+}
+```
+This is where most of the magic happens. When we tell controller-runtime to build our controller with `NewControllerManagedBy(...).For(...).Complete(...)`, it creates a controller struct with references to our reconciler implementation and a new workqueue for the controller.
+  
 ```golang
 /* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/controller/controller.go */
 
@@ -258,8 +270,9 @@ func NewUnmanaged(name string, mgr manager.Manager, options Options) (Controller
     }, nil
 }
 ```
-[Remember when we added the controller to the manager](#the-manager)? It was just a single line of code `ctrl.NewControllerManagedBy(mgr).For(&mygroupv1.MyKind{}).Complete(r)`, but a lot happens behind the scenes. 
-When the controller is added to the manager, the manager's cache is injected into the controller. Why is that important? When the manager is started, the control loop is started as well. This will create and run informers for our resources, and the informers are managed by the injected manager cache. The workqueue is created and the controller invokes the informer's `AddEventHandler` function to register its workqueue to receive resource updates. It then starts worker goroutines), each of which will process a workqueue item by calling our custom reconciler logic inside `processNextWorkItem`.
+When the controller is added to the manager, the manager's cache is injected into the controller. Why does the controller need the cache, you might ask, if it already has the client? 
+
+When the manager is started, the control loop is started as well. This will create and run informers for our resources, and these are not managed by the controller, but by the manager cache. In addition, the controller workqueue needs to be registered to the informer. Finally, worker goroutines are launched, each of which will process a workqueue item by calling our custom reconciler logic inside `processNextWorkItem`.
 ```golang
 /* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/internal/controller/controller.go */
 
@@ -308,4 +321,6 @@ func (c *Controller) Start(ctx context.Context) error {
 ## In a nutshell
 And finally, here is a picture to summarize what we have found out:
 
-![dartboard]({{"/images/controller-runtime.svg"}})
+![svg]({{"/images/controller-runtime.svg"}})
+
+I hope that this post helped make some things a bit clearer - if you have any feedback, I'm happy to hear them!
