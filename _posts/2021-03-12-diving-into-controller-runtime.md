@@ -270,9 +270,9 @@ func NewUnmanaged(name string, mgr manager.Manager, options Options) (Controller
     }, nil
 }
 ```
-When the controller is added to the manager, the manager's cache is injected into the controller. Why does the controller need the cache, you might ask, if it already has the client? 
+When the controller is added to the manager, the manager's cache is injected into the controller. The controller needs the manager cache, because of the resource updates provided by the informers in the manager cache.
 
-When the manager is started, the control loop is started as well. This will create and run informers for our resources, and these are not managed by the controller, but by the manager cache. In addition, the controller workqueue needs to be registered to the informer. Finally, worker goroutines are launched, each of which will process a workqueue item by calling our custom reconciler logic inside `processNextWorkItem`.
+When the manager is started, the control loop is started as well. This will create and run informers for our resources, and the controller workqueue is registered to the informers. Finally, worker goroutines are launched, each of which will process a workqueue item by calling our custom reconciler logic inside `processNextWorkItem`.
 ```golang
 /* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/internal/controller/controller.go */
 
