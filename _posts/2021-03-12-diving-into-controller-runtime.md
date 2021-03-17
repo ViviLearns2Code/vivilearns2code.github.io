@@ -6,7 +6,7 @@ categories: k8s
 comments: true
 excerpt_separator: <!--more-->
 ---
-In my previous post [Writing Controllers for Kubernetes Custom Resources]() I explored the development process using pure client-go and how it differs from using controller-runtime (and kubebuilder). In this post, I explore how controller-runtime (v0.7.0) uses concepts we know from client-go.
+In my previous post [Writing Controllers for Kubernetes Custom Resources]({% link _posts/2021-03-11-writing-controllers-for-kubernetes-custom-resources.md %}) I explored the development process using pure client-go and how it differs from using controller-runtime (and kubebuilder). In this post, I explore how controller-runtime (v0.7.0) uses concepts we know from client-go.
 
 <!--more-->
 As described in my previous post, to develop an operator with controller-runtime, we need to
