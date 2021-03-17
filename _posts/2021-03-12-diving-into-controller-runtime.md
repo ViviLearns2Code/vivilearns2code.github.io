@@ -319,7 +319,7 @@ func (c *Controller) Start(ctx context.Context) error {
 ```
 
 ## In a nutshell
-And finally, here is a picture to summarize what we have found out:
+And finally, here is a picture to summarize the relationship between our code, controller-runtime and client-go:
 
 ![svg]({{"/images/controller-runtime.svg"}})
 
