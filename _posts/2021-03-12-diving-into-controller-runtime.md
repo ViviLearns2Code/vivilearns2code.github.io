@@ -14,7 +14,7 @@ As described in my previous post, to develop an operator with controller-runtime
 2. generate deepcopy functions
 3. write reconciler logic
 4. create and run the controller
-5. perform deployment-related steps (out of cope for this post)
+5. perform deployment-related steps (out of scope for this post)
    
 I will skip the first two steps as they are similar to development with pure client-go and start with the reconciler logic. Here, controller-runtime needs us to implement the `Reconciler` interface:
 ```golang
