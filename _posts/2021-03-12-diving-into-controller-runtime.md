@@ -45,7 +45,7 @@ func (r *MyKindReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 After this, we have to create and run the controller. And that's where a new layer of abstraction called the `manager` comes in.
 
 ## The Manager
-A manager is required to create and start up a controller (there can be multiple controllers associated with a manager). The manager needs a kubeconfig and can be provided with many configuration options. After creating and configuring the manager, we can add our controller to it. Starting the manager also starts all controllers (and other runnables like webhook servers) assigned to it.
+A manager is required to create and start up a controller (there can be multiple controllers associated with a manager). Starting the manager also starts all controllers (and other runnables like webhook servers) assigned to it.
 ```golang
 /* snipped source code from https://github.com/ViviLearns2Code/myoperator/blob/main/main.go */
 package main
@@ -87,14 +87,14 @@ func main() {
   // start manager
   mgr.Start(ctrl.SetupSignalHandler())
 ```
-There's a lot of magic happening behind these scenes. For example, we might ask ourselves:
+It's just a few lines of code, but there's a lot of magic happening behind the scenes. For example, we might ask ourselves:
 * with pure client-go, we generated informers to keep us updated about resources - where are they now?
-* with pure client-go, we read from an internal cache (lister) and write to the k8s apiserver (clientset) in our reconciler logic - how does that work now?
+* with pure client-go, we read from an internal cache (lister) and write to the k8s apiserver (clientset) when we reconcile - how does that work now?
 
-The former question is answered by the manager's `cache` component, the latter by its `client` component. Let's look at them next.
+The first question is answered by the manager's `cache` component, the second by its `client` component. Let's look at them next.
 
 ## The Manager's Components
-A manager's `client` component is responsible for read and write operations in general, while the `cache` can be used to read data from a local index to reduce load on the k8s apiserver. The client component reuses the cache component for some of its read operations.
+A manager's `client` component is responsible for read and write operations in general. The `cache` actually has two functions: 1) it manages informers and therefore keeps our controller in the loop regarding resource updates and 2) it caches data in a local index to reduce load on the k8s apiserver. The client component reuses the cache component for some cached read operations.
 
 ```golang
 /* snipped source code from https://github.com/kubernetes-sigs/controller-runtime/blob/release-0.7/pkg/manager/internal.go */
