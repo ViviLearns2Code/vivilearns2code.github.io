@@ -3,7 +3,7 @@ layout: post
 title:  "Backpropagation Pt I"
 date:   2018-04-13 20:24:00 +0200
 comments: true
-categories: [deep-learning, backpropagation]
+categories: ml
 excerpt_separator: <!--more-->
 ---
 Although backpropagation is "just" an application of the (multivariate) chain rule, it took me a while to actually write it down in code. I have seen many sources derive update formulas but what really helped me understand backpropagation was the introduction of computation graphs in Stanford's CS231n class. 

@@ -3,7 +3,7 @@ layout: post
 title:  "Backpropagation Pt II"
 date:   2018-04-18 19:12:22 +0200
 comments: true
-categories: [deep-learning, backpropagation]
+categories: ml
 excerpt_separator: <!--more-->
 ---
 This is the continuation of my [backpropagation post]({% post_url 2018-04-13-backpropagation-i %}). This time, I will recap how I implemented backpropagation for batch normalization.

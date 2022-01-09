@@ -3,7 +3,7 @@ layout: post
 title:  "Getting Started with NLP Part II"
 date:   2018-11-18 19:02:00 +0100
 comments: true
-categories: nlp
+categories: ml
 excerpt_separator: <!--more-->
 ---
 

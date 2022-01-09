@@ -3,7 +3,7 @@ layout: post
 title:  "Reinforcement Learning Notes"
 date:   2018-07-29 18:31:43 +0100
 comments: true
-categories: reinforcement-learning
+categories: ml
 excerpt_separator: <!--more-->
 ---
 [Part 14 of Stanford's CS231n lecture][3] was about Reinforcement Learning. The content of the slides was very dense, so I looked up a couple of concepts to understand the concepts better.

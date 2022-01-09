@@ -3,7 +3,7 @@ layout: post
 title:  "Getting Started with NLP Part I"
 date:   2018-11-11 10:04:00 +0100
 comments: true
-categories: nlp
+categories: ml
 excerpt_separator: <!--more-->
 ---
 Two weeks ago, I attended [PyCon.DE](https://de.pycon.org/). It was an amazing experience; the talks and the people I met there have become an additional source of motivation and inspiration for me. From the people who worked as data scientists, I heard a lot about containerization or working with open source projects like Dask or Arrow. Training models in Jupyter Notebook is only a tiny part in a data scientist's daily work - handling infrastructure requirements is often more important. Below is a list of talks about topics I would like to try out in the future or read about in more detail:

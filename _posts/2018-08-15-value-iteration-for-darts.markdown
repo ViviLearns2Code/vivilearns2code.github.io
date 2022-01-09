@@ -3,7 +3,7 @@ layout: post
 title:  "Value Iteration for Darts"
 date:   2018-08-15 18:12:01 +0100
 comments: true
-categories: reinforcement-learning
+categories: ml
 ---
 My colleagues organized a darts tournament at around the same time I watched the CS231n lecture about reinforcement learning. Of course, this could only end in one way - in a small reinforcement learning toy example.
 

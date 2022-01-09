@@ -3,7 +3,7 @@ layout: post
 title:  "Predicting FIFA World Cup Games"
 date:   2018-07-17 18:31:43 +0100
 comments: true
-categories: [project, machine-learning]
+categories: [project, ml]
 excerpt_separator: <!--more-->
 ---
 As a football enthusiast and a beginner in machine learning, the FIFA World Cup was the perfect "first project". I decided to build a model which would predict the exact number of goals scored by each team in a game. 
