@@ -44,7 +44,8 @@ show_excerpts: true
 # this and add the path to the pages in order as they should show up
 header_pages:
  - about.md
-permalink: /:categories/:title/
+# posts will follow base_url/categories/title
+#permalink: /:categories/:title/
 
 # Exclude from processing.
 # The following items will not be processed, by default. Create a custom list
