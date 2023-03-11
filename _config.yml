@@ -18,32 +18,37 @@ description: >- # this means to ignore newlines until "baseurl:"
   Notes on All Things Tech
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://vivilearns2code.github.io" # the base hostname & protocol for your site, e.g. http://example.com
-github_username:  vivilearns2code
 author: vivilearns2code
-twitter_username: vivilearns2code
-disqus:
-    # Leave shortname blank to disable comments site-wide.
-    # Disable comments for any post by adding `comments: false` to that post's YAML Front Matter.
-    shortname: vivilearns2code
-# Build settings
-markdown: kramdown
-#theme: minima
-minima:
-  skin: dark
+lang: "en"
+mathjax: true
+compress_html:
+  blanklines: true
+
+
+show_excerpts: true        # show article excerpts on the home page
+show_frame: true           # adds a gray frame to the site
+show_sidebar: false        # show a sidebar instead of the usual header
+navigation:                # accepts {file, title, url, icon, sidebaricon}
+  - {file: "index.html"}
+  - {file: "README.md"}
+
+
+external:                  # shows a footer with social links - for available icons see fontawesome.com/icons
+  - {title: Github, icon: github, url: "https://github.com/vivilearns2code"}
+  - {title: Subscribe, icon: rss, url: "/feed.xml"}
+
+comments:
+  disqus_shortname: "vivilearns2code"    # see https://disqus.com/
+ 
+remote_theme: niklasbuschmann/contrast@v2.11
+
 plugins:
   - jekll-remote-theme
   - jekyll-feed
   - jekyll-seo-tag
   - jekyll-paginate
 paginate: 10  
-remote_theme: jekyll/minima
 future: false
-# set to true to show excerpts on the homepage
-show_excerpts: true
-# If you want to link only specific pages in your header, uncomment
-# this and add the path to the pages in order as they should show up
-header_pages:
- - about.md
 # posts will follow base_url/categories/title
 #permalink: /:categories/:title/
 
