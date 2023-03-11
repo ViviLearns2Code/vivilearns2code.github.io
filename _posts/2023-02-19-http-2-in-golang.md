@@ -2,7 +2,7 @@
 layout: post
 title:  "HTTP/2 in Golang"
 date:   2023-03-11 18:17:42 +0100
-categories: k8s
+categories: misc
 comments: true
 ---
 This is the start of a series of posts about two up-and-coming technologies: HTTP/2 and gRPC. Both are closely related and slowly superseding HTTP/1.1.and conventional REST APIs respectively. In this first post, I would like to give a brief introduction to HTTP/2 and how we can enable Golang clients and servers to talk HTTP/2 over both encrypted and unencrypted connections.
