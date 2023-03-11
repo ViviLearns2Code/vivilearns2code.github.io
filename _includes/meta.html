@@ -1,0 +1,18 @@
+<header>
+    <h1><a href="{{ include.post.url | relative_url }}">{{ include.post.title }}</a></h1>
+    {%- assign date_format = site.date_format | default: "%B %d, %Y" -%}
+    <time datetime="{{ include.post.date | date_to_xmlschema }}">{{ include.post.date | date: date_format }}</time>
+    {%- if page.categories -%}
+    • <span itemprop="categories">
+      {% if post %}
+        {% assign categories = post.categories %}
+      {% else %}
+        {% assign categories = page.categories %}
+      {% endif %}
+      {% for category in categories %}
+      <a href="{{site.baseurl}}/categories/#{{category|slugize}}">{{category}}</a>
+      {% unless forloop.last %}&nbsp;{% endunless %}
+      {% endfor %}
+    </span>
+  {%- endif -%}</p>
+  </header>
