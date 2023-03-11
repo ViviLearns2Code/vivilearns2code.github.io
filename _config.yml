@@ -39,6 +39,7 @@ external:                  # shows a footer with social links - for available ic
 
 comments:
   disqus_shortname: "vivilearns2code"    # see https://disqus.com/
+  disqus: true
  
 remote_theme: niklasbuschmann/contrast@v2.11
 
